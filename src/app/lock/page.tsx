@@ -246,14 +246,14 @@ export default function LockPage() {
 
   return (
     <NetworkGuard requireConnection>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 pt-10 md:pt-0">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Lock className="h-8 w-8 text-cyan-500" />
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight flex items-center gap-2 md:gap-3">
+            <Lock className="h-6 w-6 md:h-8 md:w-8 text-cyan-500" />
             Token Lock
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm md:text-base">
             Lock tokens with optional vesting schedules
           </p>
         </div>

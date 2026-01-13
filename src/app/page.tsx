@@ -49,7 +49,7 @@ function StatCard({
   href?: string;
 }) {
   const content = (
-    <div className="group relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/[0.05] p-5 transition-all duration-500 hover:bg-white/[0.05] hover:border-white/[0.1] cursor-pointer">
+    <div className="group relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/[0.05] p-4 md:p-5 transition-all duration-500 hover:bg-white/[0.05] hover:border-white/[0.1] cursor-pointer">
       {/* Gradient glow on hover */}
       <div className={cn(
         "absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-500",
@@ -98,7 +98,7 @@ function ActionCard({
 }) {
   return (
     <Link href={href}>
-      <div className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 h-full transition-all duration-500 hover:bg-white/[0.04] hover:border-white/[0.1] hover:translate-y-[-2px]">
+      <div className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/[0.05] p-4 md:p-5 h-full transition-all duration-500 hover:bg-white/[0.04] hover:border-white/[0.1] hover:translate-y-[-2px]">
         {/* Subtle gradient glow */}
         <div className={cn(
           "absolute -bottom-8 -left-8 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-all duration-500",
@@ -161,14 +161,14 @@ export default function DashboardPage() {
     <AnimatedGradient className="min-h-[calc(100vh-4rem)]">
       <div className="space-y-8 py-2">
         {/* Hero Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 pt-10 md:pt-0">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-2xl md:text-4xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-white via-white to-white/50 bg-clip-text text-transparent">
                 Dashboard
               </span>
             </h1>
-            <p className="text-white/40 mt-2">
+            <p className="text-white/40 mt-1 md:mt-2 text-sm md:text-base">
               Monad NFT Operations Dashboard
             </p>
           </div>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard
             label="MON Balance"
             value={balance ? parseFloat(formatEther(balance.value)).toFixed(2) : '0.00'}
@@ -313,12 +313,12 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white/90">Quick Actions</h2>
-              <span className="text-sm text-white/30">
+              <h2 className="text-base md:text-lg font-semibold text-white/90">Quick Actions</h2>
+              <span className="text-xs md:text-sm text-white/30 hidden sm:block">
                 Press <kbd className="px-2 py-1 bg-white/[0.05] rounded-lg text-xs border border-white/[0.1]">⌘K</kbd> for commands
               </span>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
               {quickActions.map((action) => (
                 <ActionCard key={action.href} {...action} />
               ))}
@@ -333,10 +333,10 @@ export default function DashboardPage() {
 
         {/* Recent Batches */}
         <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] overflow-hidden">
-          <div className="p-6 flex items-center justify-between border-b border-white/[0.05]">
+          <div className="p-4 md:p-6 flex items-center justify-between border-b border-white/[0.05]">
             <div>
-              <h3 className="font-semibold text-white/90">Recent Batches</h3>
-              <p className="text-sm text-white/40">Your latest operations</p>
+              <h3 className="font-semibold text-white/90 text-sm md:text-base">Recent Batches</h3>
+              <p className="text-xs md:text-sm text-white/40">Your latest operations</p>
             </div>
             <Button variant="ghost" size="sm" className="text-white/50 hover:text-white/80" asChild>
               <Link href="/batches">
@@ -345,9 +345,9 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {batches.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-8 md:py-12">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.03] flex items-center justify-center">
                   <Clock className="h-7 w-7 text-white/20" />
                 </div>
@@ -430,18 +430,18 @@ export default function DashboardPage() {
         </div>
 
         {/* Plan Limits - Subtle footer */}
-        <div className="rounded-2xl bg-white/[0.01] border border-white/[0.03] p-6">
+        <div className="rounded-2xl bg-white/[0.01] border border-white/[0.03] p-4 md:p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Sparkles className="h-5 w-5 text-purple-400/60" />
               <div>
-                <p className="text-sm font-medium text-white/60">Plan Limits</p>
+                <p className="text-xs md:text-sm font-medium text-white/60">Plan Limits</p>
                 <p className="text-xs text-white/30">
                   {plan === 'free' ? 'Upgrade for higher limits' : 'Full access enabled'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-8 text-sm">
+            <div className="flex items-center gap-4 md:gap-8 text-xs md:text-sm flex-wrap">
               <div>
                 <span className="text-white/30">Batch: </span>
                 <span className="text-white/60 font-medium">{limits.maxBatchSize}</span>

@@ -296,20 +296,20 @@ export default function StreamsPage() {
 
   return (
     <NetworkGuard requireConnection>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 pt-10 md:pt-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-              <Waves className="h-8 w-8 text-cyan-500" />
+            <h1 className="text-xl md:text-3xl font-bold tracking-tight flex items-center gap-2 md:gap-3">
+              <Waves className="h-6 w-6 md:h-8 md:w-8 text-cyan-500" />
               Token Streams
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm md:text-base">
               Manage your token streams and vesting schedules
             </p>
           </div>
           <Link href="/streams/create">
-            <Button className="bg-gradient-to-r from-cyan-500 to-blue-500">
+            <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Create Stream
             </Button>
@@ -343,37 +343,37 @@ export default function StreamsPage() {
 
         {/* Stats Cards */}
         {isContractDeployed && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="p-4 md:pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Active Streams</p>
-                    <p className="text-2xl font-bold">{totalStreaming}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Active Streams</p>
+                    <p className="text-xl md:text-2xl font-bold">{totalStreaming}</p>
                   </div>
-                  <Play className="h-8 w-8 text-green-500" />
+                  <Play className="h-6 w-6 md:h-8 md:w-8 text-green-500" />
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="p-4 md:pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Streams</p>
-                    <p className="text-2xl font-bold">{streams.length}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Total Streams</p>
+                    <p className="text-xl md:text-2xl font-bold">{streams.length}</p>
                   </div>
-                  <Waves className="h-8 w-8 text-cyan-500" />
+                  <Waves className="h-6 w-6 md:h-8 md:w-8 text-cyan-500" />
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="p-4 md:pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Withdrawable</p>
-                    <p className="text-2xl font-bold">{streams.filter(s => s.withdrawable > 0n).length} streams</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Withdrawable</p>
+                    <p className="text-xl md:text-2xl font-bold">{streams.filter(s => s.withdrawable > 0n).length} streams</p>
                   </div>
-                  <Wallet className="h-8 w-8 text-purple-500" />
+                  <Wallet className="h-6 w-6 md:h-8 md:w-8 text-purple-500" />
                 </div>
               </CardContent>
             </Card>

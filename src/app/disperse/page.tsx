@@ -308,7 +308,7 @@ export default function DispersePage() {
                               <div className="flex items-center gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                                 <a
-                                  href={`https://explorer.monad.xyz/tx/${execResult.txHash}`}
+                                  href={`https://monadvision.com/tx/${execResult.txHash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-primary hover:underline"

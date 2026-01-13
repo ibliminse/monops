@@ -298,7 +298,7 @@ export default function SnapshotsPage() {
                             {truncateAddress(holder.address, 8)}
                           </code>
                           <a
-                            href={`https://explorer.monad.xyz/address/${holder.address}`}
+                            href={`https://monadvision.com/address/${holder.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-muted-foreground hover:text-foreground"

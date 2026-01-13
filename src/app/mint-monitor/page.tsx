@@ -231,7 +231,7 @@ export default function MintMonitorPage() {
                       <div className="flex items-center gap-2">
                         <code className="text-sm">{truncateAddress(mint.minter)}</code>
                         <a
-                          href={`https://explorer.monad.xyz/address/${mint.minter}`}
+                          href={`https://monadvision.com/address/${mint.minter}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-muted-foreground hover:text-foreground"
@@ -248,7 +248,7 @@ export default function MintMonitorPage() {
                     </TableCell>
                     <TableCell>
                       <a
-                        href={`https://explorer.monad.xyz/tx/${mint.txHash}`}
+                        href={`https://monadvision.com/tx/${mint.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"

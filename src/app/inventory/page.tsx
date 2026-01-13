@@ -164,7 +164,7 @@ export default function InventoryPage() {
                       <div className="flex items-center gap-2 text-sm text-white/40">
                         <code>{truncateAddress(collection.address, 6)}</code>
                         <a
-                          href={`https://explorer.monad.xyz/address/${collection.address}`}
+                          href={`https://monadvision.com/address/${collection.address}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:text-white/60 transition-colors"

@@ -25,8 +25,8 @@ export const monadMainnet = defineChain({
   },
   blockExplorers: {
     default: {
-      name: 'Monad Explorer',
-      url: 'https://explorer.monad.xyz',
+      name: 'MonadVision',
+      url: 'https://monadvision.com',
     },
   },
 });

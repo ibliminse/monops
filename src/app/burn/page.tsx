@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWalletClient, useBalance } from 'wagmi';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { parseEther, formatEther, type Address, erc20Abi, parseAbi } from 'viem';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { NetworkGuard } from '@/components/network-guard';
+import { PageWrapper, PageHeader, AnimatedCard, EmptyState } from '@/components/ui/page-wrapper';
 import { db } from '@/lib/db';
 import { truncateAddress, formatMon } from '@/lib/utils';
 import {
@@ -240,24 +241,42 @@ export default function BurnPage() {
     return false;
   };
 
+  const tabs = [
+    { id: 'nft' as BurnType, label: 'NFTs', icon: ImageIcon },
+    { id: 'token' as BurnType, label: 'Tokens', icon: Coins },
+    { id: 'mon' as BurnType, label: 'MON', icon: Flame },
+  ];
+
   return (
     <NetworkGuard requireConnection>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Flame className="h-8 w-8 text-orange-500" />
-            Burn
-          </h1>
-          <p className="text-muted-foreground">
-            Permanently destroy tokens or NFTs by sending to the burn address
-          </p>
-        </div>
+      <PageWrapper>
+        <PageHeader
+          title="Burn"
+          description="Permanently destroy tokens or NFTs by sending to the burn address"
+          icon={
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Flame className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
+            </motion.div>
+          }
+        />
 
         {/* Warning Banner */}
-        <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-card rounded-2xl p-4 border-red-500/30 bg-red-500/10"
+        >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+            >
+              <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
+            </motion.div>
             <div>
               <h3 className="font-semibold text-red-400">Warning: Permanent Action</h3>
               <p className="text-sm text-red-300/70 mt-1">
@@ -265,250 +284,328 @@ export default function BurnPage() {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Type Tabs */}
-        <div className="flex gap-2 border-b border-border">
-          <button
-            onClick={() => setBurnType('nft')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              burnType === 'nft'
-                ? 'border-orange-500 text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <ImageIcon className="h-4 w-4" />
-            NFTs
-          </button>
-          <button
-            onClick={() => setBurnType('token')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              burnType === 'token'
-                ? 'border-orange-500 text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Coins className="h-4 w-4" />
-            Tokens
-          </button>
-          <button
-            onClick={() => setBurnType('mon')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              burnType === 'mon'
-                ? 'border-orange-500 text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Flame className="h-4 w-4" />
-            MON
-          </button>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="flex gap-1 p-1 bg-white/[0.03] rounded-xl w-fit"
+        >
+          {tabs.map((tab, index) => (
+            <motion.button
+              key={tab.id}
+              onClick={() => setBurnType(tab.id)}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 + index * 0.05 }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                burnType === tab.id
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25'
+                  : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </motion.button>
+          ))}
+        </motion.div>
 
         {/* NFT Burn */}
-        {burnType === 'nft' && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Select Collection</CardTitle>
-                <CardDescription>Choose NFTs to burn</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select value={selectedCollection} onValueChange={(v) => {
-                  setSelectedCollection(v);
-                  setSelectedNFTs(new Set());
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a collection" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {myCollections.map((c) => (
-                      <SelectItem key={c.collectionAddress} value={c.collectionAddress}>
-                        {c.name || truncateAddress(c.collectionAddress)} ({holdings.filter(h => h.collectionAddress === c.collectionAddress && h.ownerAddress === address?.toLowerCase()).length} owned)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-
-            {selectedCollection && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select NFTs to Burn</CardTitle>
-                  <CardDescription>
-                    {selectedNFTs.size} selected for burning
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {collectionNFTs.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No NFTs found in this collection
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                      {collectionNFTs.map((nft) => (
-                        <button
-                          key={nft.tokenId}
-                          onClick={() => toggleNFT(nft.tokenId)}
-                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                            selectedNFTs.has(nft.tokenId)
-                              ? 'border-orange-500 ring-2 ring-orange-500/50'
-                              : 'border-border hover:border-muted-foreground'
-                          }`}
-                        >
-                          {nft.image ? (
-                            <img
-                              src={nft.image}
-                              alt={nft.name || `#${nft.tokenId}`}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">#{nft.tokenId}</span>
-                            </div>
-                          )}
-                          {selectedNFTs.has(nft.tokenId) && (
-                            <div className="absolute inset-0 bg-orange-500/20 flex items-center justify-center">
-                              <div className="bg-orange-500 rounded-full p-1">
-                                <Flame className="h-4 w-4 text-white" />
-                              </div>
-                            </div>
-                          )}
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5">
-                            <span className="text-xs text-white truncate">#{nft.tokenId}</span>
-                          </div>
-                        </button>
+        <AnimatePresence mode="wait">
+          {burnType === 'nft' && (
+            <motion.div
+              key="nft"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <AnimatedCard delay={0.2}>
+                <div className="p-5 md:p-6 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <ImageIcon className="h-5 w-5 text-orange-500" />
+                      Select Collection
+                    </h3>
+                    <p className="text-sm text-white/40">Choose NFTs to burn</p>
+                  </div>
+                  <Select value={selectedCollection} onValueChange={(v) => {
+                    setSelectedCollection(v);
+                    setSelectedNFTs(new Set());
+                  }}>
+                    <SelectTrigger className="bg-white/[0.03] border-white/[0.08]">
+                      <SelectValue placeholder="Select a collection" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {myCollections.map((c) => (
+                        <SelectItem key={c.collectionAddress} value={c.collectionAddress}>
+                          {c.name || truncateAddress(c.collectionAddress)} ({holdings.filter(h => h.collectionAddress === c.collectionAddress && h.ownerAddress === address?.toLowerCase()).length} owned)
+                        </SelectItem>
                       ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Token Burn */}
-        {burnType === 'token' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Burn Tokens</CardTitle>
-              <CardDescription>Send ERC-20 tokens to the burn address</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {loadingTokens ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  <span>Loading tokens...</span>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : tokens.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No tokens found in your wallet
-                </p>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <Label>Token</Label>
-                    <Select value={selectedToken} onValueChange={setSelectedToken}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select token to burn" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tokens.map((t) => (
-                          <SelectItem key={t.address} value={t.address}>
-                            {t.symbol} - {parseFloat(t.formattedBalance).toFixed(4)} available
-                          </SelectItem>
+              </AnimatedCard>
+
+              {selectedCollection && (
+                <AnimatedCard delay={0.25}>
+                  <div className="p-5 md:p-6 space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                        <Flame className="h-5 w-5 text-orange-500" />
+                        Select NFTs to Burn
+                      </h3>
+                      <p className="text-sm text-white/40">
+                        {selectedNFTs.size} selected for burning
+                      </p>
+                    </div>
+
+                    {collectionNFTs.length === 0 ? (
+                      <EmptyState
+                        icon={<ImageIcon className="h-8 w-8 text-white/30" />}
+                        title="No NFTs found in this collection"
+                      />
+                    ) : (
+                      <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                          hidden: { opacity: 0 },
+                          visible: { opacity: 1, transition: { staggerChildren: 0.03 } },
+                        }}
+                        className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3"
+                      >
+                        {collectionNFTs.map((nft) => (
+                          <motion.button
+                            key={nft.tokenId}
+                            variants={{
+                              hidden: { opacity: 0, scale: 0.8 },
+                              visible: { opacity: 1, scale: 1 },
+                            }}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => toggleNFT(nft.tokenId)}
+                            className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+                              selectedNFTs.has(nft.tokenId)
+                                ? 'border-orange-500 ring-2 ring-orange-500/50'
+                                : 'border-white/[0.08] hover:border-white/20'
+                            }`}
+                          >
+                            {nft.image ? (
+                              <img
+                                src={nft.image}
+                                alt={nft.name || `#${nft.tokenId}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
+                                <span className="text-xs text-white/50">#{nft.tokenId}</span>
+                              </div>
+                            )}
+                            {selectedNFTs.has(nft.tokenId) && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="absolute inset-0 bg-orange-500/30 flex items-center justify-center"
+                              >
+                                <motion.div
+                                  animate={{ scale: [1, 1.2, 1] }}
+                                  transition={{ duration: 0.5, repeat: Infinity }}
+                                  className="bg-orange-500 rounded-full p-1"
+                                >
+                                  <Flame className="h-4 w-4 text-white" />
+                                </motion.div>
+                              </motion.div>
+                            )}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5">
+                              <span className="text-xs text-white truncate">#{nft.tokenId}</span>
+                            </div>
+                          </motion.button>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </motion.div>
+                    )}
+                  </div>
+                </AnimatedCard>
+              )}
+            </motion.div>
+          )}
+
+          {/* Token Burn */}
+          {burnType === 'token' && (
+            <motion.div
+              key="token"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <AnimatedCard delay={0.2}>
+                <div className="p-5 md:p-6 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <Coins className="h-5 w-5 text-orange-500" />
+                      Burn Tokens
+                    </h3>
+                    <p className="text-sm text-white/40">Send ERC-20 tokens to the burn address</p>
                   </div>
 
-                  {selectedTokenData && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <Label>Amount to Burn</Label>
-                        <button
-                          className="text-xs text-orange-500 hover:underline"
-                          onClick={() => setTokenAmount(selectedTokenData.formattedBalance)}
-                        >
-                          Burn All: {parseFloat(selectedTokenData.formattedBalance).toFixed(4)}
-                        </button>
-                      </div>
-                      <Input
-                        type="number"
-                        placeholder="0.0"
-                        value={tokenAmount}
-                        onChange={(e) => setTokenAmount(e.target.value)}
-                      />
+                  {loadingTokens ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-500 mr-2" />
+                      <span className="text-white/50">Loading tokens...</span>
                     </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* MON Burn */}
-        {burnType === 'mon' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Burn MON</CardTitle>
-              <CardDescription>Send native MON to the burn address</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="text-sm text-muted-foreground">Your Balance</div>
-                <div className="text-2xl font-bold">
-                  {monBalance ? formatMon(monBalance.value) : '0'} MON
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Amount to Burn</Label>
-                  {monBalance && (
-                    <button
-                      className="text-xs text-orange-500 hover:underline"
-                      onClick={() => setMonAmount(formatEther(monBalance.value))}
+                  ) : tokens.length === 0 ? (
+                    <EmptyState
+                      icon={<Coins className="h-8 w-8 text-white/30" />}
+                      title="No tokens found in your wallet"
+                    />
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-4"
                     >
-                      Burn All: {formatMon(monBalance.value)}
-                    </button>
+                      <div className="space-y-2">
+                        <Label className="text-white/70">Token</Label>
+                        <Select value={selectedToken} onValueChange={setSelectedToken}>
+                          <SelectTrigger className="bg-white/[0.03] border-white/[0.08]">
+                            <SelectValue placeholder="Select token to burn" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tokens.map((t) => (
+                              <SelectItem key={t.address} value={t.address}>
+                                {t.symbol} - {parseFloat(t.formattedBalance).toFixed(4)} available
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {selectedTokenData && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="space-y-2"
+                        >
+                          <div className="flex justify-between">
+                            <Label className="text-white/70">Amount to Burn</Label>
+                            <button
+                              className="text-xs text-orange-500 hover:text-orange-400 transition-colors"
+                              onClick={() => setTokenAmount(selectedTokenData.formattedBalance)}
+                            >
+                              Burn All: {parseFloat(selectedTokenData.formattedBalance).toFixed(4)}
+                            </button>
+                          </div>
+                          <Input
+                            type="number"
+                            placeholder="0.0"
+                            value={tokenAmount}
+                            onChange={(e) => setTokenAmount(e.target.value)}
+                            className="bg-white/[0.03] border-white/[0.08]"
+                          />
+                        </motion.div>
+                      )}
+                    </motion.div>
                   )}
                 </div>
-                <Input
-                  type="number"
-                  placeholder="0.0"
-                  value={monAmount}
-                  onChange={(e) => setMonAmount(e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </AnimatedCard>
+            </motion.div>
+          )}
+
+          {/* MON Burn */}
+          {burnType === 'mon' && (
+            <motion.div
+              key="mon"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <AnimatedCard delay={0.2}>
+                <div className="p-5 md:p-6 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <Flame className="h-5 w-5 text-orange-500" />
+                      Burn MON
+                    </h3>
+                    <p className="text-sm text-white/40">Send native MON to the burn address</p>
+                  </div>
+
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border border-orange-500/20"
+                  >
+                    <div className="text-sm text-white/50">Your Balance</div>
+                    <div className="text-2xl font-bold text-white tabular-nums">
+                      {monBalance ? formatMon(monBalance.value) : '0'} MON
+                    </div>
+                  </motion.div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label className="text-white/70">Amount to Burn</Label>
+                      {monBalance && (
+                        <button
+                          className="text-xs text-orange-500 hover:text-orange-400 transition-colors"
+                          onClick={() => setMonAmount(formatEther(monBalance.value))}
+                        >
+                          Burn All: {formatMon(monBalance.value)}
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      type="number"
+                      placeholder="0.0"
+                      value={monAmount}
+                      onChange={(e) => setMonAmount(e.target.value)}
+                      className="bg-white/[0.03] border-white/[0.08]"
+                    />
+                  </div>
+                </div>
+              </AnimatedCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Burn Button */}
-        <Button
-          onClick={() => setShowConfirm(true)}
-          disabled={!canBurn() || isExecuting}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-          size="lg"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          whileHover={{ scale: canBurn() ? 1.02 : 1 }}
+          whileTap={{ scale: canBurn() ? 0.98 : 1 }}
         >
-          {isExecuting ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <Flame className="mr-2 h-5 w-5" />
-          )}
-          Burn Forever
-        </Button>
+          <Button
+            onClick={() => setShowConfirm(true)}
+            disabled={!canBurn() || isExecuting}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg shadow-orange-500/25"
+            size="lg"
+          >
+            {isExecuting ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <motion.span
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="mr-2"
+              >
+                <Flame className="h-5 w-5" />
+              </motion.span>
+            )}
+            Burn Forever
+          </Button>
+        </motion.div>
 
         {/* Confirmation Dialog */}
         <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <AlertDialogContent>
+          <AlertDialogContent className="bg-[#0a0a0f] border-white/[0.08]">
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-red-500">
                 <AlertTriangle className="h-5 w-5" />
                 Confirm Burn
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-base">
+              <AlertDialogDescription className="text-base text-white/70">
                 {getConfirmMessage()}
                 <div className="mt-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
                   <p className="text-sm text-red-400">
@@ -518,7 +615,7 @@ export default function BurnPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="bg-white/[0.05] border-white/[0.08] hover:bg-white/[0.1]">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleBurn}
                 className="bg-red-500 hover:bg-red-600"
@@ -531,17 +628,30 @@ export default function BurnPage() {
         </AlertDialog>
 
         {/* Result */}
-        {result && (
-          <Card className={result.success ? 'border-green-500' : 'border-destructive'}>
-            <CardContent className="pt-6">
+        <AnimatePresence>
+          {result && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className={`glass-card rounded-2xl p-5 ${
+                result.success ? 'border-green-500/30' : 'border-red-500/30'
+              }`}
+            >
               <div className="flex items-center gap-3">
                 {result.success ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-500" />
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200 }}
+                  >
+                    <CheckCircle2 className="h-6 w-6 text-green-500" />
+                  </motion.div>
                 ) : (
-                  <XCircle className="h-6 w-6 text-destructive" />
+                  <XCircle className="h-6 w-6 text-red-500" />
                 )}
                 <div>
-                  <div className="font-medium">
+                  <div className="font-medium text-white">
                     {result.success ? 'Burn Successful!' : 'Burn Failed'}
                   </div>
                   {result.txHash && (
@@ -549,20 +659,20 @@ export default function BurnPage() {
                       href={`https://monadvision.com/tx/${result.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                      className="text-sm text-orange-500 hover:text-orange-400 flex items-center gap-1"
                     >
                       View transaction <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
                   {result.error && (
-                    <div className="text-sm text-destructive">{result.error}</div>
+                    <div className="text-sm text-red-400">{result.error}</div>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </PageWrapper>
     </NetworkGuard>
   );
 }

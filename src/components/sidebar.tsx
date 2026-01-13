@@ -16,6 +16,7 @@ import {
   Waves,
   Menu,
   X,
+  BookOpen,
 } from 'lucide-react';
 
 const navItems = [
@@ -29,6 +30,7 @@ const navItems = [
 ];
 
 const bottomItems = [
+  { href: '/docs', label: 'Docs', icon: BookOpen, color: 'from-green-500 to-emerald-500' },
   { href: '/developer', label: 'Developer', icon: Settings, color: 'from-gray-500 to-slate-500' },
 ];
 

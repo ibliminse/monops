@@ -30,6 +30,8 @@ export interface NFTHolding {
   tokenId: string;
   ownerAddress: string;
   amount: number; // 1 for ERC721, variable for ERC1155
+  image?: string; // NFT image URL
+  name?: string; // NFT name
   lastUpdatedBlock: number;
   lastUpdatedAt: number;
 }
@@ -103,7 +105,6 @@ export interface StoredToken {
 // ============================================================================
 
 export class MonOpsDB extends Dexie {
-  wallets!: Table<StoredWallet>;
   collections!: Table<WatchedCollection>;
   holdings!: Table<NFTHolding>;
   transfers!: Table<TransferEvent>;
@@ -115,9 +116,9 @@ export class MonOpsDB extends Dexie {
   constructor() {
     super('monops');
 
-    // Single version with all tables - cleaner for new installs
-    this.version(3).stores({
-      wallets: '++id, address, label, isConnected, addedAt',
+    // Version 5: Removed wallets table (single wallet mode)
+    this.version(5).stores({
+      wallets: null, // Remove wallets table
       collections: '++id, address, walletAddress, type, [walletAddress+address], lastSyncBlock',
       holdings: '++id, collectionAddress, tokenId, ownerAddress, [collectionAddress+ownerAddress], [collectionAddress+tokenId]',
       transfers: '++id, collectionAddress, tokenId, from, to, blockNumber, transactionHash, [collectionAddress+blockNumber]',

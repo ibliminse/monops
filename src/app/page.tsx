@@ -126,7 +126,6 @@ export default function DashboardPage() {
   const { isConnected, isCorrectNetwork } = useNetworkGuard();
   const { isLoading: isSyncing, progress, refresh } = useWalletSync();
 
-  const wallets = useLiveQuery(() => db.wallets.toArray()) ?? [];
   const collections = useLiveQuery(() => db.collections.toArray()) ?? [];
   const holdings = useLiveQuery(() => db.holdings.toArray()) ?? [];
   const tokens = useLiveQuery(() =>
@@ -141,7 +140,6 @@ export default function DashboardPage() {
   const limits = getPlanLimits();
 
   const quickActions = [
-    { href: '/wallets', label: 'Manage Wallets', description: 'Add and label addresses', icon: Wallet, gradient: 'from-blue-500/80 to-cyan-400/80' },
     { href: '/inventory', label: 'View Inventory', description: 'Browse NFT holdings', icon: Image, gradient: 'from-purple-500/80 to-pink-400/80' },
     { href: '/snapshots', label: 'Take Snapshot', description: 'Export holder lists', icon: Camera, gradient: 'from-amber-500/80 to-orange-400/80' },
     { href: '/transfer', label: 'Mass Transfer', description: 'Batch send NFTs', icon: Send, gradient: 'from-emerald-500/80 to-teal-400/80' },
@@ -235,11 +233,11 @@ export default function DashboardPage() {
             href="/inventory"
           />
           <StatCard
-            label="Wallets"
-            value={`${wallets.length} / ${limits.maxStoredWallets}`}
+            label="Wallet"
+            value={isConnected ? 'Connected' : 'Not Connected'}
+            subValue={address ? `${address.slice(0, 6)}...${address.slice(-4)}` : undefined}
             icon={Wallet}
             gradient="from-blue-500/80 to-cyan-600/80"
-            href="/wallets"
           />
           <StatCard
             label="Batches"
@@ -448,10 +446,6 @@ export default function DashboardPage() {
               <div>
                 <span className="text-white/30">Collections: </span>
                 <span className="text-white/60 font-medium">{limits.maxWatchedCollections}</span>
-              </div>
-              <div>
-                <span className="text-white/30">Wallets: </span>
-                <span className="text-white/60 font-medium">{limits.maxStoredWallets}</span>
               </div>
             </div>
           </div>

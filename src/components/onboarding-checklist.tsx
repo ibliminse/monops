@@ -31,7 +31,6 @@ interface ChecklistItem {
 
 export function OnboardingChecklist() {
   const { isConnected } = useAccount();
-  const wallets = useLiveQuery(() => db.wallets.toArray()) ?? [];
   const collections = useLiveQuery(() => db.collections.toArray()) ?? [];
   const batches = useLiveQuery(() => db.batches.toArray()) ?? [];
 
@@ -57,17 +56,9 @@ export function OnboardingChecklist() {
       completed: isConnected,
     },
     {
-      id: 'wallet',
-      label: 'Add a Wallet',
-      description: 'Track wallet addresses',
-      href: '/wallets',
-      icon: Wallet,
-      completed: wallets.length > 0,
-    },
-    {
       id: 'collection',
-      label: 'Watch a Collection',
-      description: 'Monitor NFT holdings',
+      label: 'View Inventory',
+      description: 'Browse your NFT holdings',
       href: '/inventory',
       icon: Image,
       completed: collections.length > 0,

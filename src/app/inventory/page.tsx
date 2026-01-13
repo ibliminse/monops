@@ -193,13 +193,24 @@ export default function InventoryPage() {
                           key={holding.id}
                           className="group relative rounded-xl bg-white/[0.03] border border-white/[0.05] p-3 hover:bg-white/[0.05] hover:border-white/[0.1] transition-all cursor-pointer"
                         >
-                          <div className="aspect-square rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-2">
-                            <span className="text-2xl font-bold text-white/30">
+                          <div className="aspect-square rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-2 overflow-hidden">
+                            {holding.image ? (
+                              <img
+                                src={holding.image}
+                                alt={holding.name || `Token #${holding.tokenId}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <span className={`text-2xl font-bold text-white/30 ${holding.image ? 'hidden' : ''}`}>
                               #{holding.tokenId.slice(0, 4)}
                             </span>
                           </div>
                           <div className="text-sm font-medium text-white/80 truncate">
-                            Token #{holding.tokenId}
+                            {holding.name || `Token #${holding.tokenId}`}
                           </div>
                           {holding.amount > 1 && (
                             <div className="text-xs text-white/40">
@@ -217,14 +228,22 @@ export default function InventoryPage() {
                           className="flex items-center justify-between p-3 rounded-xl hover:bg-white/[0.03] transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-white/50">
-                                #{holding.tokenId.slice(0, 3)}
-                              </span>
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center overflow-hidden">
+                              {holding.image ? (
+                                <img
+                                  src={holding.image}
+                                  alt={holding.name || `Token #${holding.tokenId}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xs font-bold text-white/50">
+                                  #{holding.tokenId.slice(0, 3)}
+                                </span>
+                              )}
                             </div>
                             <div>
                               <div className="font-medium text-white/80">
-                                Token #{holding.tokenId}
+                                {holding.name || `Token #${holding.tokenId}`}
                               </div>
                               <div className="text-xs text-white/40">
                                 {collection.name}

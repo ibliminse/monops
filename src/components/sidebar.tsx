@@ -16,7 +16,6 @@ import {
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/wallets', label: 'Wallets', icon: Wallet },
   { href: '/inventory', label: 'Inventory', icon: Image },
   { href: '/snapshots', label: 'Snapshots', icon: Camera },
   { href: '/transfer', label: 'Transfer', icon: Send },

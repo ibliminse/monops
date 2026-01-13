@@ -40,7 +40,6 @@ export default function DeveloperPage() {
   const chainId = useChainId();
   const { data: balance } = useBalance({ address });
 
-  const wallets = useLiveQuery(() => db.wallets.toArray()) ?? [];
   const collections = useLiveQuery(() => db.collections.toArray()) ?? [];
   const holdings = useLiveQuery(() => db.holdings.toArray()) ?? [];
   const batches = useLiveQuery(() => db.batches.toArray()) ?? [];
@@ -81,9 +80,6 @@ export default function DeveloperPage() {
     if (!confirm(`Are you sure you want to clear all ${table}?`)) return;
 
     switch (table) {
-      case 'wallets':
-        await db.wallets.clear();
-        break;
       case 'collections':
         await db.collections.clear();
         break;
@@ -97,7 +93,6 @@ export default function DeveloperPage() {
         await db.transfers.clear();
         break;
       case 'all':
-        await db.wallets.clear();
         await db.collections.clear();
         await db.holdings.clear();
         await db.batches.clear();
@@ -304,19 +299,6 @@ export default function DeveloperPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell>Wallets</TableCell>
-                <TableCell>{wallets.length}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleClearDB('wallets')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
               <TableRow>
                 <TableCell>Collections</TableCell>
                 <TableCell>{collections.length}</TableCell>

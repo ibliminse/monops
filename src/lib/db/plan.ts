@@ -3,8 +3,15 @@
  * Users who donate get whitelisted for premium features
  */
 
-// Donation wallet - update this to your wallet address
-export const DONATION_WALLET = '0x1234567890123456789012345678901234567890';
+// Donation wallets
+export const DONATION_WALLETS = {
+  monad: '0x418e804EBe896D68B6e89Bf2401410e5DE6c701a',
+  bitcoin: 'bc1qn3dcjlr6gtdpv2dl3qmtk3ht27ztrt3vyefmsf',
+  solana: '8zjNo9KkPEDUJSGsymZmSLku9aFU9Xdf7wNM5jqmdH3j',
+};
+
+// Primary donation wallet (for backwards compatibility)
+export const DONATION_WALLET = DONATION_WALLETS.monad;
 
 // Whitelisted addresses (donors) - add addresses here after they donate
 // Format: lowercase addresses

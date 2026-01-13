@@ -6,8 +6,7 @@ import { motion } from 'framer-motion';
 import { PageWrapper, PageHeader, AnimatedCard } from '@/components/ui/page-wrapper';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DONATION_WALLET, PLAN_LIMITS, isSupporter } from '@/lib/db/plan';
-import { truncateAddress } from '@/lib/utils';
+import { DONATION_WALLETS, PLAN_LIMITS, isSupporter } from '@/lib/db/plan';
 import {
   Heart,
   Copy,
@@ -19,17 +18,45 @@ import {
   Users,
   CheckCircle2,
   Crown,
+  Coins,
 } from 'lucide-react';
+
+const walletConfigs = [
+  {
+    id: 'monad',
+    name: 'Monad / EVM',
+    address: DONATION_WALLETS.monad,
+    color: 'from-purple-500 to-violet-500',
+    explorer: `https://monadvision.com/address/${DONATION_WALLETS.monad}`,
+    icon: '◈',
+  },
+  {
+    id: 'bitcoin',
+    name: 'Bitcoin',
+    address: DONATION_WALLETS.bitcoin,
+    color: 'from-orange-500 to-amber-500',
+    explorer: `https://mempool.space/address/${DONATION_WALLETS.bitcoin}`,
+    icon: '₿',
+  },
+  {
+    id: 'solana',
+    name: 'Solana',
+    address: DONATION_WALLETS.solana,
+    color: 'from-green-500 to-emerald-500',
+    explorer: `https://solscan.io/account/${DONATION_WALLETS.solana}`,
+    icon: '◎',
+  },
+];
 
 export default function DonatePage() {
   const { address } = useAccount();
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const isSupporterWallet = isSupporter(address);
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(DONATION_WALLET);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyAddress = (id: string, addr: string) => {
+    navigator.clipboard.writeText(addr);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const freeFeatures = [
@@ -86,7 +113,7 @@ export default function DonatePage() {
         </motion.div>
       )}
 
-      {/* Donation Card */}
+      {/* Donation Wallets */}
       <AnimatedCard delay={0.1}>
         <div className="p-6 md:p-8 space-y-6">
           <div className="text-center space-y-2">
@@ -99,68 +126,70 @@ export default function DonatePage() {
             </motion.div>
             <h3 className="text-2xl font-bold text-white">Make a Donation</h3>
             <p className="text-white/50 max-w-md mx-auto">
-              Send any amount of MON to support development. Your wallet will be whitelisted for premium features.
+              Send any amount to support development. Your wallet will be whitelisted for premium features.
             </p>
           </div>
 
-          {/* Donation Address */}
-          <div className="space-y-2">
-            <div className="text-sm text-white/50 text-center">Donation Wallet</div>
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              className="flex items-center gap-2 p-4 bg-white/[0.03] rounded-xl border border-white/[0.08]"
-            >
-              <code className="flex-1 text-center text-purple-400 text-sm md:text-base break-all">
-                {DONATION_WALLET}
-              </code>
-              <motion.button
-                onClick={copyAddress}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] transition-colors"
+          {/* Wallet Grid */}
+          <div className="space-y-4">
+            {walletConfigs.map((wallet, index) => (
+              <motion.div
+                key={wallet.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + index * 0.05 }}
+                className="p-4 bg-white/[0.03] rounded-xl border border-white/[0.08] space-y-3"
               >
-                {copied ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <Copy className="h-5 w-5 text-white/50" />
-                )}
-              </motion.button>
-            </motion.div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                onClick={copyAddress}
-                className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-              >
-                {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                {copied ? 'Copied!' : 'Copy Address'}
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto border-white/[0.1] bg-white/[0.02]"
-                asChild
-              >
-                <a
-                  href={`https://monadvision.com/address/${DONATION_WALLET}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${wallet.color} flex items-center justify-center text-white font-bold text-lg`}>
+                      {wallet.icon}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-white">{wallet.name}</div>
+                      <div className="text-xs text-white/40">Click to copy</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <motion.button
+                      onClick={() => copyAddress(wallet.id, wallet.address)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="p-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] transition-colors"
+                    >
+                      {copiedId === wallet.id ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-white/50" />
+                      )}
+                    </motion.button>
+                    <motion.a
+                      href={wallet.explorer}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="p-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4 text-white/50" />
+                    </motion.a>
+                  </div>
+                </div>
+                <motion.button
+                  onClick={() => copyAddress(wallet.id, wallet.address)}
+                  whileHover={{ scale: 1.005 }}
+                  className="w-full p-3 bg-white/[0.02] rounded-lg text-left"
                 >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  View on Explorer
-                </a>
-              </Button>
-            </motion.div>
+                  <code className="text-sm text-purple-400 break-all">{wallet.address}</code>
+                </motion.button>
+              </motion.div>
+            ))}
           </div>
         </div>
       </AnimatedCard>
 
       {/* How It Works */}
-      <AnimatedCard delay={0.15}>
+      <AnimatedCard delay={0.2}>
         <div className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
@@ -168,8 +197,8 @@ export default function DonatePage() {
           </h3>
           <div className="space-y-4">
             {[
-              { step: 1, title: 'Make a donation', desc: 'Send any amount of MON to the donation wallet above' },
-              { step: 2, title: 'Share your wallet', desc: 'DM us on Twitter/X with your wallet address and tx hash' },
+              { step: 1, title: 'Make a donation', desc: 'Send any amount to one of the wallets above' },
+              { step: 2, title: 'Share your wallet', desc: 'DM us on Twitter/X with your EVM wallet address and tx hash' },
               { step: 3, title: 'Get whitelisted', desc: 'We\'ll add your wallet to the supporter list within 24 hours' },
               { step: 4, title: 'Enjoy premium', desc: 'All premium features are unlocked for your wallet forever' },
             ].map((item, index) => (
@@ -177,7 +206,7 @@ export default function DonatePage() {
                 key={item.step}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + index * 0.05 }}
+                transition={{ delay: 0.25 + index * 0.05 }}
                 className="flex items-start gap-4"
               >
                 <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold shrink-0">
@@ -196,7 +225,7 @@ export default function DonatePage() {
       {/* Feature Comparison */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Free */}
-        <AnimatedCard delay={0.2}>
+        <AnimatedCard delay={0.25}>
           <div className="p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Free</h3>
@@ -214,7 +243,7 @@ export default function DonatePage() {
         </AnimatedCard>
 
         {/* Supporter */}
-        <AnimatedCard delay={0.25}>
+        <AnimatedCard delay={0.3}>
           <div className="p-5 space-y-4 relative overflow-hidden">
             {/* Glow effect */}
             <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl" />
@@ -244,7 +273,7 @@ export default function DonatePage() {
       </div>
 
       {/* Why Donate */}
-      <AnimatedCard delay={0.3} hover={false}>
+      <AnimatedCard delay={0.35} hover={false}>
         <div className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Heart className="h-5 w-5 text-pink-500" />
@@ -261,7 +290,7 @@ export default function DonatePage() {
                 key={item.title}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 + index * 0.05 }}
+                transition={{ delay: 0.4 + index * 0.05 }}
                 className="flex items-start gap-3"
               >
                 <div className="p-2 rounded-lg bg-white/[0.05]">

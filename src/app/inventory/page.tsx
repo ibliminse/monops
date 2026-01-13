@@ -132,11 +132,11 @@ export default function InventoryPage() {
           <Image className="h-12 w-12 mx-auto mb-4 text-white/20" />
           <p className="text-white/50 mb-2">No NFTs found</p>
           <p className="text-white/30 text-sm mb-4">
-            We scanned recent blocks but didn&apos;t find any NFTs for this wallet
+            Try refreshing to sync your NFTs from Monad
           </p>
           <Button onClick={refresh} variant="outline" className="border-white/[0.1]">
             <RefreshCw className="h-4 w-4 mr-2" />
-            Scan Again
+            Refresh
           </Button>
         </div>
       )}

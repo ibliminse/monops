@@ -123,11 +123,17 @@ function ActionCard({
 export default function DashboardPage() {
   const { address } = useAccount();
   const { data: balance } = useBalance({ address });
-  const { isConnected, isCorrectNetwork } = useNetworkGuard();
+  const { isConnected } = useNetworkGuard();
   const { isLoading: isSyncing, progress, refresh } = useWalletSync();
 
-  const collections = useLiveQuery(() => db.collections.toArray()) ?? [];
-  const holdings = useLiveQuery(() => db.holdings.toArray()) ?? [];
+  const collections = useLiveQuery(
+    () => address ? db.collections.where('walletAddress').equals(address.toLowerCase()).toArray() : [],
+    [address]
+  ) ?? [];
+  const holdings = useLiveQuery(
+    () => address ? db.holdings.where('ownerAddress').equals(address.toLowerCase()).toArray() : [],
+    [address]
+  ) ?? [];
   const tokens = useLiveQuery(() =>
     address ? db.tokens.where('walletAddress').equals(address.toLowerCase()).toArray() : [],
     [address]

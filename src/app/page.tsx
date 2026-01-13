@@ -41,7 +41,49 @@ import {
   Waves,
 } from 'lucide-react';
 
-// Animated stat card with glassmorphism
+// Compact mobile stat row
+function MobileStatsBar({
+  balance,
+  nfts,
+  collections,
+  isConnected,
+}: {
+  balance: number;
+  nfts: number;
+  collections: number;
+  isConnected: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="md:hidden glass-card rounded-2xl p-4"
+    >
+      <div className="grid grid-cols-3 gap-3">
+        <Link href="/transfer" className="text-center">
+          <div className="text-lg font-bold text-white tabular-nums">
+            {balance.toFixed(2)}
+          </div>
+          <div className="text-[10px] text-white/40 uppercase tracking-wide">MON</div>
+        </Link>
+        <Link href="/inventory" className="text-center border-x border-white/[0.08]">
+          <div className="text-lg font-bold text-white tabular-nums">{nfts}</div>
+          <div className="text-[10px] text-white/40 uppercase tracking-wide">NFTs</div>
+        </Link>
+        <div className="text-center">
+          <div className="text-lg font-bold text-white tabular-nums">
+            {isConnected ? collections : '—'}
+          </div>
+          <div className="text-[10px] text-white/40 uppercase tracking-wide">
+            {isConnected ? 'Collections' : 'Offline'}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Animated stat card with glassmorphism (desktop only now)
 function StatCard({
   label,
   value,
@@ -301,16 +343,16 @@ export default function DashboardPage() {
     <>
       <BackgroundOrbs />
       <div className="space-y-6 md:space-y-8 py-2 pt-12 md:pt-2">
-        {/* Hero Section */}
+        {/* Hero Section - Compact on mobile */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
-          className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+          className="flex items-center justify-between gap-4"
         >
           <div>
             <motion.h1
-              className="text-3xl md:text-5xl font-bold tracking-tight"
+              className="text-2xl md:text-5xl font-bold tracking-tight"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -320,7 +362,7 @@ export default function DashboardPage() {
               </span>
             </motion.h1>
             <motion.p
-              className="text-white/40 mt-2 text-sm md:text-base"
+              className="text-white/40 mt-1 text-xs md:text-base hidden md:block"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -329,14 +371,14 @@ export default function DashboardPage() {
             </motion.p>
           </div>
           <motion.div
-            className="flex items-center gap-3"
+            className="flex items-center gap-2 md:gap-3"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Badge
               variant="secondary"
-              className="bg-white/[0.05] border-white/[0.1] text-white/70 hover:bg-white/[0.08] backdrop-blur-sm"
+              className="bg-white/[0.05] border-white/[0.1] text-white/70 hover:bg-white/[0.08] backdrop-blur-sm text-xs"
             >
               {plan === 'supporter' ? 'Supporter' : 'Free'}
             </Badge>
@@ -344,12 +386,12 @@ export default function DashboardPage() {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-400 hover:to-violet-400 border-0 shadow-lg shadow-purple-500/25"
+                  className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-400 hover:to-violet-400 border-0 shadow-lg shadow-purple-500/25 text-xs md:text-sm h-8"
                   asChild
                 >
                   <a href="/donate">
-                    Donate
-                    <ArrowUpRight className="ml-1 h-3 w-3" />
+                    <span className="hidden md:inline">Donate</span>
+                    <ArrowUpRight className="h-3 w-3 md:ml-1" />
                   </a>
                 </Button>
               </motion.div>
@@ -357,7 +399,7 @@ export default function DashboardPage() {
           </motion.div>
         </motion.div>
 
-        {/* Connection Banner */}
+        {/* Connection Banner - Compact on mobile */}
         <AnimatePresence>
           {!isConnected && (
             <motion.div
@@ -365,25 +407,20 @@ export default function DashboardPage() {
               animate={{ opacity: 1, height: 'auto', scale: 1 }}
               exit={{ opacity: 0, height: 0, scale: 0.95 }}
               transition={{ duration: 0.4 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-5 md:p-6"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-4 md:p-6"
             >
-              <motion.div
-                className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
-              <div className="relative flex items-center gap-4">
+              <div className="relative flex items-center gap-3 md:gap-4">
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/20"
+                  className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/20 shrink-0"
                 >
-                  <AlertCircle className="h-6 w-6 text-amber-400" />
+                  <AlertCircle className="h-5 w-5 md:h-6 md:w-6 text-amber-400" />
                 </motion.div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-white/90">Connect Your Wallet</h3>
-                  <p className="text-sm text-white/50">
-                    Connect to Monad mainnet to access all features
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-white/90 text-sm md:text-base">Connect Wallet</h3>
+                  <p className="text-xs md:text-sm text-white/50 truncate">
+                    Connect to Monad mainnet
                   </p>
                 </div>
               </div>
@@ -410,8 +447,16 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* Mobile Stats Bar - Compact */}
+        <MobileStatsBar
+          balance={balanceValue}
+          nfts={totalHoldings}
+          collections={collections.length}
+          isConnected={isConnected}
+        />
+
+        {/* Desktop Stats Grid */}
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="MON Balance"
             value={balanceValue.toFixed(2)}
@@ -523,88 +568,86 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Quick Actions */}
-          <div className="lg:col-span-2 space-y-4">
-            <motion.div
-              className="flex items-center justify-between"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <h2 className="text-base md:text-lg font-semibold text-white/90">Quick Actions</h2>
-              <span className="text-xs text-white/30 hidden sm:block">
-                Press <kbd className="px-2 py-1 bg-white/[0.05] rounded-lg text-xs border border-white/[0.1]">⌘K</kbd> for commands
-              </span>
-            </motion.div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
-              {quickActions.map((action, idx) => (
-                <ActionCard key={action.href} {...action} index={idx} />
-              ))}
-            </div>
-          </div>
-
-          {/* Onboarding */}
+        {/* Quick Actions */}
+        <div className="space-y-3 md:space-y-4">
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            className="flex items-center justify-between"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
           >
-            <OnboardingChecklist />
+            <h2 className="text-sm md:text-lg font-semibold text-white/90">Quick Actions</h2>
+            <span className="text-xs text-white/30 hidden md:block">
+              Press <kbd className="px-2 py-1 bg-white/[0.05] rounded-lg text-xs border border-white/[0.1]">⌘K</kbd> for commands
+            </span>
           </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+            {quickActions.map((action, idx) => (
+              <ActionCard key={action.href} {...action} index={idx} />
+            ))}
+          </div>
         </div>
 
-        {/* Recent Batches */}
+        {/* Onboarding - Desktop only */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+          className="hidden md:block"
+        >
+          <OnboardingChecklist />
+        </motion.div>
+
+        {/* Recent Batches - Compact on mobile */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           className="rounded-2xl glass-card overflow-hidden"
         >
-          <div className="p-4 md:p-6 flex items-center justify-between border-b border-white/[0.05]">
+          <div className="p-3 md:p-6 flex items-center justify-between border-b border-white/[0.05]">
             <div>
               <h3 className="font-semibold text-white/90 text-sm md:text-base">Recent Batches</h3>
-              <p className="text-xs md:text-sm text-white/40">Your latest operations</p>
+              <p className="text-[10px] md:text-sm text-white/40">Your latest operations</p>
             </div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="sm" className="text-white/50 hover:text-white/80" asChild>
+              <Button variant="ghost" size="sm" className="text-white/50 hover:text-white/80 text-xs md:text-sm h-8" asChild>
                 <Link href="/batches">
-                  View all <ArrowRight className="ml-1 h-4 w-4" />
+                  View all <ArrowRight className="ml-1 h-3 w-3 md:h-4 md:w-4" />
                 </Link>
               </Button>
             </motion.div>
           </div>
 
-          <div className="p-4 md:p-6">
+          <div className="p-3 md:p-6">
             {batches.length === 0 ? (
               <motion.div
-                className="text-center py-8 md:py-12"
+                className="text-center py-6 md:py-12"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
                 <motion.div
-                  className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.03] flex items-center justify-center"
+                  className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 rounded-xl md:rounded-2xl bg-white/[0.03] flex items-center justify-center"
                   animate={{ y: [0, -5, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Clock className="h-7 w-7 text-white/20" />
+                  <Clock className="h-5 w-5 md:h-7 md:w-7 text-white/20" />
                 </motion.div>
-                <p className="text-white/50">No batch operations yet</p>
-                <p className="text-sm text-white/30 mt-1">
-                  Start by transferring NFTs or dispersing tokens
+                <p className="text-white/50 text-sm md:text-base">No batch operations yet</p>
+                <p className="text-xs md:text-sm text-white/30 mt-1">
+                  Start by transferring NFTs
                 </p>
-                <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
+                <div className="flex items-center justify-center gap-2 md:gap-3 mt-4 md:mt-6">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/[0.1] bg-white/[0.02] hover:bg-white/[0.05] text-white/70"
+                      className="border-white/[0.1] bg-white/[0.02] hover:bg-white/[0.05] text-white/70 text-xs h-8"
                       asChild
                     >
                       <Link href="/transfer">
-                        <Send className="mr-2 h-4 w-4" />
-                        Transfer NFTs
+                        <Send className="mr-1.5 h-3 w-3" />
+                        Transfer
                       </Link>
                     </Button>
                   </motion.div>
@@ -612,12 +655,12 @@ export default function DashboardPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/[0.1] bg-white/[0.02] hover:bg-white/[0.05] text-white/70"
+                      className="border-white/[0.1] bg-white/[0.02] hover:bg-white/[0.05] text-white/70 text-xs h-8"
                       asChild
                     >
-                      <Link href="/transfer">
-                        <Coins className="mr-2 h-4 w-4" />
-                        Send Tokens
+                      <Link href="/streams">
+                        <Coins className="mr-1.5 h-3 w-3" />
+                        Stream
                       </Link>
                     </Button>
                   </motion.div>
@@ -679,14 +722,14 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Plan Limits - Subtle footer */}
+        {/* Plan Limits - Desktop only */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="rounded-2xl bg-white/[0.01] border border-white/[0.03] p-4 md:p-6"
+          className="hidden md:block rounded-2xl bg-white/[0.01] border border-white/[0.03] p-6"
         >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ rotate: [0, 360] }}
@@ -695,13 +738,13 @@ export default function DashboardPage() {
                 <Sparkles className="h-5 w-5 text-purple-400/60" />
               </motion.div>
               <div>
-                <p className="text-xs md:text-sm font-medium text-white/60">Plan Limits</p>
+                <p className="text-sm font-medium text-white/60">Plan Limits</p>
                 <p className="text-xs text-white/30">
                   {plan === 'free' ? 'Upgrade for higher limits' : 'Full access enabled'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4 md:gap-8 text-xs md:text-sm flex-wrap">
+            <div className="flex items-center gap-8 text-sm">
               <div>
                 <span className="text-white/30">Batch: </span>
                 <span className="text-white/60 font-medium tabular-nums">{limits.maxBatchSize}</span>

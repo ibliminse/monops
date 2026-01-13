@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPublicClient, http, formatGwei } from 'viem';
 import { monadMainnet } from '@/lib/chain';
 import { Tooltip } from '@/components/ui/tooltip';
-import { Activity, Fuel, Zap, Clock, DollarSign } from 'lucide-react';
+import { Activity, Fuel, Zap, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const client = createPublicClient({
   chain: monadMainnet,
@@ -14,11 +16,21 @@ const client = createPublicClient({
 export function LiveStats() {
   const [blockNumber, setBlockNumber] = useState<bigint | null>(null);
   const [gasPrice, setGasPrice] = useState<bigint | null>(null);
-  const [blockTime, setBlockTime] = useState<number | null>(null);
   const [tps, setTps] = useState<number | null>(null);
-  const [monPrice, setMonPrice] = useState<number | null>(null);
-  const [monChange24h, setMonChange24h] = useState<number | null>(null);
   const [isLive, setIsLive] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch chain stats
   useEffect(() => {
@@ -32,13 +44,7 @@ export function LiveStats() {
         setGasPrice(gas);
         setIsLive(true);
 
-        // Calculate block time (seconds since this block)
-        const now = Math.floor(Date.now() / 1000);
-        const blockTimestamp = Number(block.timestamp);
-        setBlockTime(now - blockTimestamp);
-
-        // Estimate TPS from transaction count in block and block time
-        // Get previous block to calculate actual block interval
+        // Estimate TPS from transaction count in block
         if (block.number > 1n) {
           const prevBlock = await client.getBlock({ blockNumber: block.number - 1n });
           const interval = Number(block.timestamp - prevBlock.timestamp);
@@ -57,88 +63,109 @@ export function LiveStats() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch MON price from CoinGecko
-  useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        const res = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=monad&vs_currencies=usd&include_24hr_change=true'
-        );
-        const data = await res.json();
-        if (data.monad?.usd) {
-          setMonPrice(data.monad.usd);
-          setMonChange24h(data.monad.usd_24h_change ?? null);
-        }
-      } catch (e) {
-        // Price fetch failed, not critical
-      }
-    };
-
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 60000); // Update price every minute
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="flex items-center gap-5 text-sm">
-      <Tooltip content={isLive ? 'Connected to Monad RPC' : 'RPC connection failed'}>
-        <div className="flex items-center gap-2 cursor-default">
-          <div className={`h-2 w-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-          <span className="text-muted-foreground">
-            {isLive ? 'Live' : 'Offline'}
-          </span>
-        </div>
-      </Tooltip>
+    <div ref={containerRef} className="relative">
+      {/* Mobile: Compact pill that expands */}
+      <motion.button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="md:hidden flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs"
+        whileTap={{ scale: 0.97 }}
+      >
+        <div className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          isLive ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+        )} />
+        <span className="text-white/60 font-medium">
+          {isLive ? 'Live' : 'Offline'}
+        </span>
+        <ChevronDown className={cn(
+          "h-3 w-3 text-white/40 transition-transform",
+          isExpanded && "rotate-180"
+        )} />
+      </motion.button>
 
-      {monPrice && (
-        <Tooltip content="MON price (24h change)">
-          <div className="flex items-center gap-1.5 text-muted-foreground cursor-default">
-            <DollarSign className="h-3.5 w-3.5" />
-            <span className="font-mono">${monPrice.toFixed(4)}</span>
-            {monChange24h !== null && (
-              <span className={`font-mono text-xs ${monChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {monChange24h >= 0 ? '+' : ''}{monChange24h.toFixed(2)}%
-              </span>
-            )}
+      {/* Mobile dropdown */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="md:hidden absolute right-0 top-full mt-2 p-3 rounded-xl bg-[#12121a] border border-white/[0.1] shadow-xl shadow-black/50 min-w-[180px] z-50"
+          >
+            <div className="space-y-2.5">
+              {blockNumber && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white/50">
+                    <Activity className="h-3.5 w-3.5" />
+                    <span className="text-xs">Block</span>
+                  </div>
+                  <span className="font-mono text-xs text-white/80">{blockNumber.toLocaleString()}</span>
+                </div>
+              )}
+              {tps !== null && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white/50">
+                    <Zap className="h-3.5 w-3.5" />
+                    <span className="text-xs">TPS</span>
+                  </div>
+                  <span className="font-mono text-xs text-white/80">{tps}</span>
+                </div>
+              )}
+              {gasPrice && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white/50">
+                    <Fuel className="h-3.5 w-3.5" />
+                    <span className="text-xs">Gas</span>
+                  </div>
+                  <span className="font-mono text-xs text-white/80">{formatGwei(gasPrice)} gwei</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop: Full inline stats */}
+      <div className="hidden md:flex items-center gap-4 text-sm">
+        <Tooltip content={isLive ? 'Connected to Monad RPC' : 'RPC connection failed'}>
+          <div className="flex items-center gap-2 cursor-default">
+            <div className={cn(
+              "h-2 w-2 rounded-full",
+              isLive ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+            )} />
+            <span className="text-white/50">{isLive ? 'Live' : 'Offline'}</span>
           </div>
         </Tooltip>
-      )}
 
-      {blockNumber && (
-        <Tooltip content="Current Monad block number">
-          <div className="flex items-center gap-1.5 text-muted-foreground cursor-default">
-            <Activity className="h-3.5 w-3.5" />
-            <span className="font-mono">{blockNumber.toLocaleString()}</span>
-          </div>
-        </Tooltip>
-      )}
+        {blockNumber && (
+          <Tooltip content="Current block">
+            <div className="flex items-center gap-1.5 text-white/40 cursor-default">
+              <Activity className="h-3.5 w-3.5" />
+              <span className="font-mono text-xs">{blockNumber.toLocaleString()}</span>
+            </div>
+          </Tooltip>
+        )}
 
-      {blockTime !== null && (
-        <Tooltip content="Time since last block">
-          <div className="flex items-center gap-1.5 text-muted-foreground cursor-default">
-            <Clock className="h-3.5 w-3.5" />
-            <span className="font-mono">{blockTime < 60 ? `${blockTime}s` : `${Math.floor(blockTime / 60)}m`}</span>
-          </div>
-        </Tooltip>
-      )}
+        {tps !== null && (
+          <Tooltip content="Transactions per second">
+            <div className="flex items-center gap-1.5 text-white/40 cursor-default">
+              <Zap className="h-3.5 w-3.5" />
+              <span className="font-mono text-xs">{tps} TPS</span>
+            </div>
+          </Tooltip>
+        )}
 
-      {tps !== null && (
-        <Tooltip content="Transactions per second (estimated)">
-          <div className="flex items-center gap-1.5 text-muted-foreground cursor-default">
-            <Zap className="h-3.5 w-3.5" />
-            <span className="font-mono">{tps} TPS</span>
-          </div>
-        </Tooltip>
-      )}
-
-      {gasPrice && (
-        <Tooltip content="Current gas price on Monad">
-          <div className="flex items-center gap-1.5 text-muted-foreground cursor-default">
-            <Fuel className="h-3.5 w-3.5" />
-            <span className="font-mono">{formatGwei(gasPrice)} gwei</span>
-          </div>
-        </Tooltip>
-      )}
+        {gasPrice && (
+          <Tooltip content="Gas price">
+            <div className="flex items-center gap-1.5 text-white/40 cursor-default">
+              <Fuel className="h-3.5 w-3.5" />
+              <span className="font-mono text-xs">{formatGwei(gasPrice)}</span>
+            </div>
+          </Tooltip>
+        )}
+      </div>
     </div>
   );
 }

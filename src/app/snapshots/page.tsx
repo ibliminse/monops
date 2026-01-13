@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useAccount } from 'wagmi';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,8 +41,9 @@ import {
 } from 'lucide-react';
 
 export default function SnapshotsPage() {
+  const { address } = useAccount();
   const collections = useLiveQuery(() => db.collections.toArray()) ?? [];
-  const limits = getPlanLimits();
+  const limits = getPlanLimits(address);
 
   const [selectedCollection, setSelectedCollection] = useState<string>('');
   const [customAddress, setCustomAddress] = useState('');

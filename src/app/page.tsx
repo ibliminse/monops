@@ -281,8 +281,8 @@ export default function DashboardPage() {
     db.batches.orderBy('createdAt').reverse().limit(5).toArray()
   ) ?? [];
 
-  const plan = getCurrentPlan();
-  const limits = getPlanLimits();
+  const plan = getCurrentPlan(address);
+  const limits = getPlanLimits(address);
 
   const quickActions = [
     { href: '/inventory', label: 'Inventory', description: 'Browse NFT holdings', icon: Image, gradient: 'from-purple-500 to-pink-500' },
@@ -338,16 +338,19 @@ export default function DashboardPage() {
               variant="secondary"
               className="bg-white/[0.05] border-white/[0.1] text-white/70 hover:bg-white/[0.08] backdrop-blur-sm"
             >
-              {plan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+              {plan === 'supporter' ? 'Supporter' : 'Free'}
             </Badge>
             {plan === 'free' && (
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   size="sm"
                   className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-400 hover:to-violet-400 border-0 shadow-lg shadow-purple-500/25"
+                  asChild
                 >
-                  Upgrade
-                  <ArrowUpRight className="ml-1 h-3 w-3" />
+                  <a href="/donate">
+                    Donate
+                    <ArrowUpRight className="ml-1 h-3 w-3" />
+                  </a>
                 </Button>
               </motion.div>
             )}

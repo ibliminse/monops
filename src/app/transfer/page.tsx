@@ -61,7 +61,7 @@ export default function TransferPage() {
   const { data: walletClient } = useWalletClient();
   const { data: monBalance } = useBalance({ address });
   const holdings = useLiveQuery(() => db.holdings.toArray()) ?? [];
-  const limits = getPlanLimits();
+  const limits = getPlanLimits(address);
 
   // UI State
   const [mode, setMode] = useState<ModeType>('lite');

@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   BookOpen,
+  Heart,
 } from 'lucide-react';
 
 const navItems = [
@@ -30,6 +31,7 @@ const navItems = [
 ];
 
 const bottomItems = [
+  { href: '/donate', label: 'Donate', icon: Heart, color: 'from-pink-500 to-rose-500' },
   { href: '/docs', label: 'Docs', icon: BookOpen, color: 'from-green-500 to-emerald-500' },
   { href: '/developer', label: 'Developer', icon: Settings, color: 'from-gray-500 to-slate-500' },
 ];

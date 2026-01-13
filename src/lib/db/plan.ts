@@ -1,10 +1,19 @@
 /**
- * Plan/Monetization Scaffolding
- * For MVP, this is stored in localStorage
- * Later: replace with Stripe subscription check
+ * Donation-based Feature Access
+ * Users who donate get whitelisted for premium features
  */
 
-export type PlanType = 'free' | 'pro';
+// Donation wallet - update this to your wallet address
+export const DONATION_WALLET = '0x1234567890123456789012345678901234567890';
+
+// Whitelisted addresses (donors) - add addresses here after they donate
+// Format: lowercase addresses
+export const WHITELIST: string[] = [
+  // Add donor addresses here:
+  // '0xabc123...',
+];
+
+export type PlanType = 'free' | 'supporter';
 
 export interface PlanLimits {
   maxBatchSize: number;
@@ -20,7 +29,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     maxWatchedCollections: 3,
     maxStoredWallets: 5,
   },
-  pro: {
+  supporter: {
     maxBatchSize: 1000,
     maxExportRows: 10000,
     maxWatchedCollections: 50,
@@ -28,30 +37,32 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   },
 };
 
-const PLAN_STORAGE_KEY = 'monops_plan';
+/**
+ * Check if a wallet address is whitelisted (donated)
+ */
+export function isWhitelisted(address: string | undefined): boolean {
+  if (!address) return false;
+  return WHITELIST.includes(address.toLowerCase());
+}
 
-export function getCurrentPlan(): PlanType {
-  if (typeof window === 'undefined') return 'free';
-  const stored = localStorage.getItem(PLAN_STORAGE_KEY);
-  if (stored === 'pro') return 'pro';
+/**
+ * Get current plan based on connected wallet
+ */
+export function getCurrentPlan(address: string | undefined): PlanType {
+  if (isWhitelisted(address)) return 'supporter';
   return 'free';
 }
 
-export function setCurrentPlan(plan: PlanType): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(PLAN_STORAGE_KEY, plan);
+/**
+ * Get plan limits for the connected wallet
+ */
+export function getPlanLimits(address?: string): PlanLimits {
+  return PLAN_LIMITS[getCurrentPlan(address)];
 }
 
-export function getPlanLimits(): PlanLimits {
-  return PLAN_LIMITS[getCurrentPlan()];
+/**
+ * Check if wallet has supporter status
+ */
+export function isSupporter(address: string | undefined): boolean {
+  return getCurrentPlan(address) === 'supporter';
 }
-
-export function isPro(): boolean {
-  return getCurrentPlan() === 'pro';
-}
-
-// TODO: Replace with Stripe integration
-// export async function checkStripeSubscription(userId: string): Promise<PlanType> {
-//   const response = await fetch('/api/subscription/check', { ... });
-//   return response.json();
-// }

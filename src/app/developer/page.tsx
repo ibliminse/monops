@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { db } from '@/lib/db';
 import { monadMainnet, MONAD_CHAIN_ID } from '@/lib/chain';
-import { getCurrentPlan, setCurrentPlan, getPlanLimits, type PlanType } from '@/lib/db/plan';
+import { getCurrentPlan, getPlanLimits, type PlanType } from '@/lib/db/plan';
 import { formatMon, truncateAddress } from '@/lib/utils';
 import {
   Settings,
@@ -46,12 +46,8 @@ export default function DeveloperPage() {
 
   const [currentBlock, setCurrentBlock] = useState<bigint | null>(null);
   const [isLoadingBlock, setIsLoadingBlock] = useState(false);
-  const [plan, setPlan] = useState<PlanType>('free');
-  const limits = getPlanLimits();
-
-  useEffect(() => {
-    setPlan(getCurrentPlan());
-  }, []);
+  const plan = getCurrentPlan(address);
+  const limits = getPlanLimits(address);
 
   const fetchCurrentBlock = async () => {
     setIsLoadingBlock(true);
@@ -69,12 +65,6 @@ export default function DeveloperPage() {
     const interval = setInterval(fetchCurrentBlock, 30000); // Update every 30s
     return () => clearInterval(interval);
   }, []);
-
-  const handleTogglePlan = () => {
-    const newPlan = plan === 'free' ? 'pro' : 'free';
-    setCurrentPlan(newPlan);
-    setPlan(newPlan);
-  };
 
   const handleClearDB = async (table: string) => {
     if (!confirm(`Are you sure you want to clear all ${table}?`)) return;
@@ -238,12 +228,12 @@ export default function DeveloperPage() {
         </CardContent>
       </Card>
 
-      {/* Plan Toggle */}
+      {/* Plan Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Plan Settings</CardTitle>
+          <CardTitle>Plan Status</CardTitle>
           <CardDescription>
-            Toggle between Free and Pro plans for testing
+            Plan is determined by donation whitelist
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -251,13 +241,15 @@ export default function DeveloperPage() {
             <div>
               <Label>Current Plan</Label>
               <div className="mt-1">
-                <Badge variant={plan === 'pro' ? 'default' : 'secondary'}>
-                  {plan === 'pro' ? 'Pro' : 'Free'}
+                <Badge variant={plan === 'supporter' ? 'default' : 'secondary'}>
+                  {plan === 'supporter' ? 'Supporter' : 'Free'}
                 </Badge>
               </div>
             </div>
-            <Button onClick={handleTogglePlan} variant="outline">
-              Switch to {plan === 'pro' ? 'Free' : 'Pro'}
+            <Button asChild variant="outline">
+              <a href="/donate">
+                {plan === 'supporter' ? 'View Donate Page' : 'Become a Supporter'}
+              </a>
             </Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

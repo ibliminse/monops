@@ -7,6 +7,7 @@ import { Header } from '@/components/header';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from 'sonner';
 import { GoogleAnalytics } from '@/components/google-analytics';
+import { DonationPrompt } from '@/components/donation-prompt';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
               </main>
             </div>
           </ErrorBoundary>
+          <DonationPrompt />
           <Toaster
             position="bottom-right"
             toastOptions={{

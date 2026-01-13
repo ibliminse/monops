@@ -12,6 +12,7 @@ import {
   Lock,
   Settings,
   LayoutDashboard,
+  Waves,
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/transfer', label: 'Transfer', icon: Send },
   { href: '/burn', label: 'Burn', icon: Flame },
   { href: '/lock', label: 'Token Lock', icon: Lock },
+  { href: '/streams', label: 'Streams', icon: Waves },
 ];
 
 const bottomItems = [
@@ -47,7 +49,7 @@ export function Sidebar() {
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}

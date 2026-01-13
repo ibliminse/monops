@@ -70,7 +70,7 @@ interface LockInfo {
 }
 
 // TODO: Deploy this contract and update the address
-const LOCK_CONTRACT_ADDRESS: Address | null = null; // Will be set after deployment
+const LOCK_CONTRACT_ADDRESS: Address = '0xC4Ca03a135B6dE0Dba430e28de5fe9C10cA99CB0'; // Will be set after deployment
 
 export default function LockPage() {
   const { address } = useAccount();

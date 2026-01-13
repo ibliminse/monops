@@ -58,6 +58,7 @@ interface TokenBalance {
 const ERC721_ABI = parseAbi([
   'function transferFrom(address from, address to, uint256 tokenId)',
   'function safeTransferFrom(address from, address to, uint256 tokenId)',
+  'function burn(uint256 tokenId)',
 ]);
 
 export default function BurnPage() {
@@ -162,12 +163,23 @@ export default function BurnPage() {
       if (burnType === 'nft') {
         // Burn NFTs one by one
         for (const tokenId of selectedNFTs) {
-          hash = await walletClient.writeContract({
-            address: selectedCollection as Address,
-            abi: ERC721_ABI,
-            functionName: 'transferFrom',
-            args: [address, BURN_ADDRESS, BigInt(tokenId)],
-          });
+          try {
+            // Try native burn function first
+            hash = await walletClient.writeContract({
+              address: selectedCollection as Address,
+              abi: ERC721_ABI,
+              functionName: 'burn',
+              args: [BigInt(tokenId)],
+            });
+          } catch {
+            // Fallback to transfer to burn address
+            hash = await walletClient.writeContract({
+              address: selectedCollection as Address,
+              abi: ERC721_ABI,
+              functionName: 'transferFrom',
+              args: [address, BURN_ADDRESS, BigInt(tokenId)],
+            });
+          }
         }
         setResult({ success: true, txHash: hash! });
 

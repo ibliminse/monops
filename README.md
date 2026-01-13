@@ -2,22 +2,24 @@
 
 A batch operations and monitoring dashboard for NFTs on Monad mainnet (Chain ID: 143).
 
+**Live Site**: [monops-six.vercel.app](https://monops-six.vercel.app)
+
 ## Features
 
-### Core Features (MVP)
-- **Wallet Library**: Add and label multiple wallet addresses for tracking
-- **Watched Collections**: Track ERC-721 and ERC-1155 collections per wallet
-- **Inventory Scanner**: Sync NFT holdings by scanning Transfer events
-- **Holder Snapshots**: Build holder lists and export to CSV
+### Core Features
+- **Inventory**: View and manage NFT holdings across wallets
 - **Mass Transfer**: Batch transfer NFTs with preflight checks
-- **Disperse**: Send MON or ERC-20 tokens to multiple recipients
-- **Mint Monitor**: Watch live mints for collections via WebSocket
+- **Token Streams**: Create vesting/streaming token payments
+- **Holder Snapshots**: Build holder lists and export to CSV
+- **Burn**: Permanently burn NFTs you own
+- **Lock**: Time-lock NFTs in escrow contracts
 
 ### Technical Highlights
 - **Monad Mainnet Only**: Network guardrails prevent usage on other chains
 - **Local-First**: All data stored in IndexedDB (Dexie) - no backend required
 - **Resumable Batches**: Sequential transaction execution with per-item status
-- **Plan Scaffolding**: Free/Pro limits ready for monetization
+- **100% Open Source**: All code is public and verifiable
+- **Non-Custodial**: Your keys, your NFTs - we never have access
 
 ## Tech Stack
 
@@ -81,30 +83,29 @@ npm start
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── page.tsx           # Dashboard
-│   ├── wallets/           # Wallet library
 │   ├── inventory/         # NFT inventory
-│   ├── snapshots/         # Holder snapshots
 │   ├── transfer/          # Mass NFT transfer
-│   ├── disperse/          # Token disperse
-│   ├── mint-monitor/      # Live mint monitoring
+│   ├── streams/           # Token streaming
+│   ├── snapshots/         # Holder snapshots
+│   ├── burn/              # NFT burning
+│   ├── lock/              # NFT locking
+│   ├── donate/            # Support page
+│   ├── docs/              # Documentation
 │   └── developer/         # Debug page
 ├── components/
 │   ├── ui/                # shadcn/ui components
 │   ├── providers.tsx      # wagmi/RainbowKit providers
-│   ├── header.tsx         # Navigation
+│   ├── sidebar.tsx        # Navigation sidebar
 │   └── network-guard.tsx  # Chain validation
 ├── features/
-│   ├── wallet-library/    # Wallet management
 │   ├── inventory/         # Collection & holdings
-│   ├── snapshots/         # Holder snapshot engine
-│   └── mint-monitor/      # WebSocket mint watching
+│   └── snapshots/         # Holder snapshot engine
 ├── hooks/
 │   └── use-network-guard.ts
 └── lib/
     ├── chain/             # Monad config, ABIs
     ├── db/                # Dexie database, plan limits
     ├── batch-engine/      # Batch execution engine
-    ├── adapters/          # Marketplace adapters (stub)
     └── utils.ts           # Helpers
 ```
 
@@ -113,23 +114,23 @@ src/
 ### 1. Connect Wallet
 Click "Connect Wallet" and switch to Monad Mainnet if prompted.
 
-### 2. Add Wallets
-Go to **Wallets** tab and add addresses you want to track.
+### 2. View Inventory
+Browse your NFT holdings in the **Inventory** page.
 
-### 3. Watch Collections
-In **Inventory**, select a wallet and add NFT collection addresses to watch.
+### 3. Mass Transfer
+In **Transfer**, select NFTs, paste CSV data (recipient,tokenId), run preflight, and execute batch transfers.
 
-### 4. Sync Holdings
-Click the sync button to scan Transfer events and build the holdings list.
+### 4. Token Streams
+Create vesting schedules or streaming payments in **Streams**.
 
 ### 5. Take Snapshots
 Go to **Snapshots** to build and export holder lists for any collection.
 
-### 6. Mass Transfer
-In **Transfer**, select a collection, paste CSV data (recipient,tokenId), run preflight, and execute.
+### 6. Burn NFTs
+Permanently destroy unwanted NFTs in the **Burn** page.
 
-### 7. Disperse Tokens
-In **Disperse**, choose MON or ERC-20, paste CSV data (address,amount), and execute.
+### 7. Lock NFTs
+Time-lock NFTs in escrow via the **Lock** page.
 
 ## CSV Formats
 
@@ -141,41 +142,26 @@ In **Disperse**, choose MON or ERC-20, paste CSV data (address,amount), and exec
 ```
 For ERC-1155, add amount: `0x1234...abcd,1,5`
 
-### Disperse
-```csv
-0x1234...abcd,1.5
-0x5678...efgh,2.0
-0x9abc...ijkl,0.5
-```
-Amounts in MON (or token units for ERC-20).
+## Support Development
 
-## Plan Limits
+MonOps is free and open source. Donate to unlock premium features - your wallet gets whitelisted forever.
 
-| Feature | Free | Pro |
-|---------|------|-----|
+### Donation Wallets
+
+| Chain | Address |
+|-------|---------|
+| Monad/EVM | `0x418e804EBe896D68B6e89Bf2401410e5DE6c701a` |
+| Bitcoin | `bc1qn3dcjlr6gtdpv2dl3qmtk3ht27ztrt3vyefmsf` |
+| Solana | `8zjNo9KkPEDUJSGsymZmSLku9aFU9Xdf7wNM5jqmdH3j` |
+
+### Feature Limits
+
+| Feature | Free | Supporter |
+|---------|------|-----------|
 | Batch Size | 10 | 1,000 |
 | Export Rows | 100 | 10,000 |
 | Watched Collections | 3 | 50 |
 | Stored Wallets | 5 | 100 |
-
-Toggle plans in the **Developer** page for testing.
-
-## Marketplace Adapters
-
-The codebase includes a `MarketplaceAdapter` interface with a stub implementation. To integrate real marketplaces:
-
-1. Implement the interface in `src/lib/adapters/marketplace.ts`
-2. Add your API keys to environment variables
-3. Update `getMarketplaceAdapter()` to return your implementation
-
-Methods to implement:
-- `getFloor(collection)` - Floor price
-- `getListings(wallet, collection?)` - Active listings
-- `createListing(...)` - List an NFT
-- `cancelListing(...)` - Cancel listing
-- `getCollectionOffers(...)` - Collection offers
-- `createCollectionOffer(...)` - Make offer
-- `cancelOffer(...)` - Cancel offer
 
 ## Network Configuration
 

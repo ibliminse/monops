@@ -6,7 +6,9 @@ import { motion } from 'framer-motion';
 import { PageWrapper, PageHeader, AnimatedCard } from '@/components/ui/page-wrapper';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DONATION_WALLETS, PLAN_LIMITS, isSupporter } from '@/lib/db/plan';
+import { Input } from '@/components/ui/input';
+import { DONATION_WALLETS, PLAN_LIMITS } from '@/lib/db/plan';
+import { useSupporterStatus } from '@/hooks';
 import {
   Heart,
   Copy,
@@ -18,7 +20,8 @@ import {
   Users,
   CheckCircle2,
   Crown,
-  Coins,
+  Loader2,
+  Search,
 } from 'lucide-react';
 
 const walletConfigs = [
@@ -51,7 +54,13 @@ const walletConfigs = [
 export default function DonatePage() {
   const { address } = useAccount();
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const isSupporterWallet = isSupporter(address);
+  const [txHash, setTxHash] = useState('');
+  const { isSupporter: isSupporterWallet, isVerifying, error, verifyDonation } = useSupporterStatus();
+
+  const handleVerify = async () => {
+    if (!txHash.trim()) return;
+    await verifyDonation(txHash.trim());
+  };
 
   const copyAddress = (id: string, addr: string) => {
     navigator.clipboard.writeText(addr);
@@ -188,8 +197,46 @@ export default function DonatePage() {
         </div>
       </AnimatedCard>
 
-      {/* How It Works */}
+      {/* Verify Donation */}
       <AnimatedCard delay={0.2}>
+        <div className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Search className="h-5 w-5 text-purple-500" />
+            Verify Your Donation
+          </h3>
+          <p className="text-sm text-white/50">
+            Already donated? Paste your transaction hash to instantly unlock supporter features.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="0x... (transaction hash)"
+              value={txHash}
+              onChange={(e) => setTxHash(e.target.value)}
+              className="flex-1 bg-white/[0.03] border-white/[0.1]"
+            />
+            <Button
+              onClick={handleVerify}
+              disabled={!txHash.trim() || !address || isVerifying}
+              className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-400 hover:to-violet-400"
+            >
+              {isVerifying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Verify'
+              )}
+            </Button>
+          </div>
+          {error && (
+            <p className="text-sm text-red-400">{error}</p>
+          )}
+          {!address && (
+            <p className="text-sm text-amber-400">Connect your wallet first</p>
+          )}
+        </div>
+      </AnimatedCard>
+
+      {/* How It Works */}
+      <AnimatedCard delay={0.25}>
         <div className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
@@ -197,16 +244,16 @@ export default function DonatePage() {
           </h3>
           <div className="space-y-4">
             {[
-              { step: 1, title: 'Make a donation', desc: 'Send any amount to one of the wallets above' },
-              { step: 2, title: 'Share your wallet', desc: 'DM us on Twitter/X with your EVM wallet address and tx hash' },
-              { step: 3, title: 'Get whitelisted', desc: 'We\'ll add your wallet to the supporter list within 24 hours' },
-              { step: 4, title: 'Enjoy premium', desc: 'All premium features are unlocked for your wallet forever' },
+              { step: 1, title: 'Make a donation', desc: 'Send at least 1 MON to the wallet above' },
+              { step: 2, title: 'Copy your tx hash', desc: 'Get the transaction hash from your wallet or explorer' },
+              { step: 3, title: 'Verify instantly', desc: 'Paste the tx hash above and click Verify' },
+              { step: 4, title: 'Enjoy premium', desc: 'All features are unlocked for your wallet forever' },
             ].map((item, index) => (
               <motion.div
                 key={item.step}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.25 + index * 0.05 }}
+                transition={{ delay: 0.3 + index * 0.05 }}
                 className="flex items-start gap-4"
               >
                 <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold shrink-0">

@@ -24,7 +24,6 @@ import { db, type NFTHolding } from '@/lib/db';
 import { getPlanLimits } from '@/lib/db/plan';
 import { truncateAddress, formatMon } from '@/lib/utils';
 import { getPublicClient } from '@/lib/chain/client';
-import { getAllTokenBalances, type TokenBalance } from '@/lib/scanner/token-scanner';
 import {
   executeNFTTransfers,
   type NFTTransferItem,
@@ -46,6 +45,15 @@ import {
 
 type TabType = 'nft' | 'token' | 'mon';
 type ModeType = 'lite' | 'pro';
+
+interface TokenBalance {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  balance: string;
+  formattedBalance: string;
+}
 
 export default function TransferPage() {
   const { address } = useAccount();
@@ -106,8 +114,14 @@ export default function TransferPage() {
   useEffect(() => {
     if (activeTab === 'token' && address && tokens.length === 0 && !loadingTokens) {
       setLoadingTokens(true);
-      getAllTokenBalances(address as Address)
-        .then(setTokens)
+      fetch(`/api/tokens?address=${address}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.tokens) {
+            setTokens(data.tokens);
+          }
+        })
+        .catch(console.error)
         .finally(() => setLoadingTokens(false));
     }
   }, [activeTab, address, tokens.length, loadingTokens]);

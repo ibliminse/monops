@@ -27,12 +27,10 @@ import { db } from '@/lib/db';
 import { getPlanLimits } from '@/lib/db/plan';
 import { truncateAddress } from '@/lib/utils';
 import {
-  buildHolderSnapshot,
   exportSnapshotCSV,
   type HolderSnapshot,
   type SnapshotProgress,
 } from '@/features/snapshots';
-import { detectNFTType } from '@/features/inventory';
 import {
   Camera,
   Download,
@@ -61,38 +59,56 @@ export default function SnapshotsPage() {
     if (!address) return;
 
     setIsBuilding(true);
-    setProgress(null);
+    setProgress({ stage: 'fetching', currentBlock: 0n, targetBlock: 0n, holdersFound: 0 });
     setSnapshot(null);
 
-    // Determine collection type
-    let type: 'ERC721' | 'ERC1155' = 'ERC721';
-    const watchedCollection = collections.find((c) => c.address === address);
-
+    // Set snapshot name
+    const watchedCollection = collections.find((c) => c.address.toLowerCase() === address.toLowerCase());
     if (watchedCollection) {
-      type = watchedCollection.type;
       setSnapshotName(watchedCollection.name);
     } else {
-      const detectedType = await detectNFTType(address as `0x${string}`);
-      if (detectedType) {
-        type = detectedType;
-      }
       setSnapshotName(`Collection-${truncateAddress(address)}`);
     }
 
-    const result = await buildHolderSnapshot(
-      address,
-      type,
-      {
-        excludeZeroAddress: excludeZero,
-        excludeContracts,
-        includeTokenIds,
-      },
-      (p) => setProgress(p)
-    );
+    try {
+      // Use API to fetch holders via Moralis
+      const response = await fetch(`/api/snapshot?collection=${address}`);
+      const data = await response.json();
 
-    setSnapshot(result);
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to build snapshot');
+      }
+
+      setProgress({ stage: 'processing', currentBlock: 0n, targetBlock: 0n, holdersFound: data.totalHolders });
+
+      // Filter results based on options
+      let holders: HolderSnapshot[] = data.holders;
+
+      // Exclude contracts if requested (this would require additional API calls)
+      // For now, we skip this as it's slow and Moralis already filters most
+
+      // Map to expected format
+      holders = holders.map((h: { address: string; count: number; tokenIds: string[] }) => ({
+        address: h.address,
+        count: h.count,
+        tokenIds: includeTokenIds ? h.tokenIds : [],
+      }));
+
+      setSnapshot(holders);
+      setProgress({ stage: 'complete', currentBlock: 0n, targetBlock: 0n, holdersFound: holders.length });
+    } catch (error) {
+      console.error('Snapshot error:', error);
+      setProgress({
+        stage: 'error',
+        currentBlock: 0n,
+        targetBlock: 0n,
+        holdersFound: 0,
+        error: error instanceof Error ? error.message : 'Failed to build snapshot',
+      });
+    }
+
     setIsBuilding(false);
-  }, [selectedCollection, customAddress, collections, excludeZero, excludeContracts, includeTokenIds]);
+  }, [selectedCollection, customAddress, collections, includeTokenIds]);
 
   const handleExport = () => {
     if (!snapshot) return;

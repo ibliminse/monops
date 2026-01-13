@@ -170,6 +170,15 @@ export default function BurnPage() {
           });
         }
         setResult({ success: true, txHash: hash! });
+
+        // Remove burned NFTs from local database
+        const burnedTokenIds = Array.from(selectedNFTs);
+        await db.holdings
+          .where('collectionAddress')
+          .equals(selectedCollection)
+          .and((h) => burnedTokenIds.includes(h.tokenId))
+          .delete();
+
         setSelectedNFTs(new Set());
       } else if (burnType === 'token') {
         const token = tokens.find((t) => t.address === selectedToken);
@@ -186,6 +195,10 @@ export default function BurnPage() {
 
         setResult({ success: true, txHash: hash });
         setTokenAmount('');
+
+        // Refresh tokens list
+        setTokens([]);
+        setSelectedToken('');
       } else {
         // Burn MON
         hash = await walletClient.sendTransaction({

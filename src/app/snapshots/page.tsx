@@ -79,16 +79,13 @@ export default function SnapshotsPage() {
         throw new Error(data.error || 'Failed to build snapshot');
       }
 
-      setProgress({ stage: 'processing', currentBlock: 0n, targetBlock: 0n, holdersFound: data.totalHolders });
-
-      // Filter results based on options
-      let holders: HolderSnapshot[] = data.holders;
-
-      // Exclude contracts if requested (this would require additional API calls)
-      // For now, we skip this as it's slow and Moralis already filters most
+      // Use name from API if available
+      if (data.name && data.name !== 'Unknown') {
+        setSnapshotName(data.name);
+      }
 
       // Map to expected format
-      holders = holders.map((h: { address: string; count: number; tokenIds: string[] }) => ({
+      const holders: HolderSnapshot[] = data.holders.map((h: { address: string; count: number; tokenIds: string[] }) => ({
         address: h.address,
         count: h.count,
         tokenIds: includeTokenIds ? h.tokenIds : [],
@@ -220,7 +217,7 @@ export default function SnapshotsPage() {
       </Card>
 
       {/* Progress */}
-      {progress && progress.stage !== 'complete' && (
+      {progress && progress.stage !== 'complete' && !progress.error && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -229,23 +226,24 @@ export default function SnapshotsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{progress.stage}</span>
-              <span>{progress.holdersFound} holders found</span>
+            <p className="text-sm text-muted-foreground">
+              Querying token owners from the blockchain. This may take 1-2 minutes for large collections...
+            </p>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary/50 rounded-full animate-pulse w-full" />
             </div>
-            {progress.stage === 'fetching' && (
-              <Progress
-                value={
-                  Number(
-                    ((progress.currentBlock - (progress.targetBlock - BigInt(500000))) * 100n) /
-                      BigInt(500000)
-                  )
-                }
-              />
-            )}
-            {progress.error && (
-              <p className="text-sm text-destructive">{progress.error}</p>
-            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error */}
+      {progress?.error && (
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Snapshot Failed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-destructive">{progress.error}</p>
           </CardContent>
         </Card>
       )}

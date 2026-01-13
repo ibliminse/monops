@@ -6,6 +6,11 @@
 
 # testing
 /coverage
+/coverage.json
+
+# hardhat
+/artifacts
+/cache_hardhat
 
 # next.js
 /.next/

@@ -8,7 +8,6 @@ import {
   Image,
   Camera,
   Send,
-  Coins,
   Radio,
   Settings,
   LayoutDashboard,
@@ -19,7 +18,6 @@ const navItems = [
   { href: '/inventory', label: 'Inventory', icon: Image },
   { href: '/snapshots', label: 'Snapshots', icon: Camera },
   { href: '/transfer', label: 'Transfer', icon: Send },
-  { href: '/disperse', label: 'Disperse', icon: Coins },
   { href: '/mint-monitor', label: 'Mint Monitor', icon: Radio },
 ];
 

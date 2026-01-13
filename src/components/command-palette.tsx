@@ -13,7 +13,6 @@ import {
   Image,
   Camera,
   Send,
-  Coins,
   Radio,
   Settings,
   Search,
@@ -35,8 +34,7 @@ const commands: CommandItem[] = [
   { id: 'wallets', label: 'Wallets', description: 'Manage wallet addresses', icon: Wallet, href: '/wallets', shortcut: 'G W' },
   { id: 'inventory', label: 'Inventory', description: 'View NFT holdings', icon: Image, href: '/inventory', shortcut: 'G I' },
   { id: 'snapshots', label: 'Snapshots', description: 'Export holder lists', icon: Camera, href: '/snapshots', shortcut: 'G S' },
-  { id: 'transfer', label: 'Mass Transfer', description: 'Batch send NFTs', icon: Send, href: '/transfer', shortcut: 'G T' },
-  { id: 'disperse', label: 'Disperse', description: 'Send tokens', icon: Coins, href: '/disperse', shortcut: 'G E' },
+  { id: 'transfer', label: 'Transfer', description: 'Send NFTs, tokens, or MON', icon: Send, href: '/transfer', shortcut: 'G T' },
   { id: 'monitor', label: 'Mint Monitor', description: 'Watch live mints', icon: Radio, href: '/mint-monitor', shortcut: 'G M' },
   { id: 'developer', label: 'Developer', description: 'Debug tools', icon: Settings, href: '/developer' },
 ];

@@ -148,8 +148,7 @@ export default function DashboardPage() {
   const quickActions = [
     { href: '/inventory', label: 'View Inventory', description: 'Browse NFT holdings', icon: Image, gradient: 'from-purple-500/80 to-pink-400/80' },
     { href: '/snapshots', label: 'Take Snapshot', description: 'Export holder lists', icon: Camera, gradient: 'from-amber-500/80 to-orange-400/80' },
-    { href: '/transfer', label: 'Mass Transfer', description: 'Batch send NFTs', icon: Send, gradient: 'from-emerald-500/80 to-teal-400/80' },
-    { href: '/disperse', label: 'Disperse Tokens', description: 'Send MON or ERC-20', icon: Coins, gradient: 'from-violet-500/80 to-purple-400/80' },
+    { href: '/transfer', label: 'Transfer', description: 'Send NFTs, tokens, or MON', icon: Send, gradient: 'from-emerald-500/80 to-teal-400/80' },
     { href: '/mint-monitor', label: 'Monitor Mints', description: 'Watch live mints', icon: Radio, gradient: 'from-rose-500/80 to-pink-400/80' },
   ];
 
@@ -228,7 +227,7 @@ export default function DashboardPage() {
             subValue="MON"
             icon={Coins}
             gradient="from-violet-500/80 to-purple-600/80"
-            href="/disperse"
+            href="/transfer"
           />
           <StatCard
             label="NFTs Owned"
@@ -372,9 +371,9 @@ export default function DashboardPage() {
                     className="border-white/[0.1] bg-white/[0.02] hover:bg-white/[0.05] text-white/70"
                     asChild
                   >
-                    <Link href="/disperse">
+                    <Link href="/transfer">
                       <Coins className="mr-2 h-4 w-4" />
-                      Disperse Tokens
+                      Send Tokens
                     </Link>
                   </Button>
                 </div>

@@ -18,7 +18,8 @@ import {
   Camera,
   Send,
   Coins,
-  Radio,
+  Flame,
+  Lock,
   ArrowRight,
   ArrowUpRight,
   Zap,
@@ -149,7 +150,8 @@ export default function DashboardPage() {
     { href: '/inventory', label: 'View Inventory', description: 'Browse NFT holdings', icon: Image, gradient: 'from-purple-500/80 to-pink-400/80' },
     { href: '/snapshots', label: 'Take Snapshot', description: 'Export holder lists', icon: Camera, gradient: 'from-amber-500/80 to-orange-400/80' },
     { href: '/transfer', label: 'Transfer', description: 'Send NFTs, tokens, or MON', icon: Send, gradient: 'from-emerald-500/80 to-teal-400/80' },
-    { href: '/mint-monitor', label: 'Monitor Mints', description: 'Watch live mints', icon: Radio, gradient: 'from-rose-500/80 to-pink-400/80' },
+    { href: '/burn', label: 'Burn', description: 'Permanently burn assets', icon: Flame, gradient: 'from-rose-500/80 to-red-400/80' },
+    { href: '/lock', label: 'Token Lock', description: 'Lock tokens with vesting', icon: Lock, gradient: 'from-cyan-500/80 to-blue-400/80' },
   ];
 
   const totalHoldings = holdings.length;

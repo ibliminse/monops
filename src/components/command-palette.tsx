@@ -13,7 +13,8 @@ import {
   Image,
   Camera,
   Send,
-  Radio,
+  Flame,
+  Lock,
   Settings,
   Search,
   Command,
@@ -35,7 +36,8 @@ const commands: CommandItem[] = [
   { id: 'inventory', label: 'Inventory', description: 'View NFT holdings', icon: Image, href: '/inventory', shortcut: 'G I' },
   { id: 'snapshots', label: 'Snapshots', description: 'Export holder lists', icon: Camera, href: '/snapshots', shortcut: 'G S' },
   { id: 'transfer', label: 'Transfer', description: 'Send NFTs, tokens, or MON', icon: Send, href: '/transfer', shortcut: 'G T' },
-  { id: 'monitor', label: 'Mint Monitor', description: 'Watch live mints', icon: Radio, href: '/mint-monitor', shortcut: 'G M' },
+  { id: 'burn', label: 'Burn', description: 'Burn tokens or NFTs forever', icon: Flame, href: '/burn', shortcut: 'G B' },
+  { id: 'lock', label: 'Token Lock', description: 'Lock tokens with vesting', icon: Lock, href: '/lock', shortcut: 'G L' },
   { id: 'developer', label: 'Developer', description: 'Debug tools', icon: Settings, href: '/developer' },
 ];
 

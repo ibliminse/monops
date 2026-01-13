@@ -8,7 +8,8 @@ import {
   Image,
   Camera,
   Send,
-  Radio,
+  Flame,
+  Lock,
   Settings,
   LayoutDashboard,
 } from 'lucide-react';
@@ -18,7 +19,8 @@ const navItems = [
   { href: '/inventory', label: 'Inventory', icon: Image },
   { href: '/snapshots', label: 'Snapshots', icon: Camera },
   { href: '/transfer', label: 'Transfer', icon: Send },
-  { href: '/mint-monitor', label: 'Mint Monitor', icon: Radio },
+  { href: '/burn', label: 'Burn', icon: Flame },
+  { href: '/lock', label: 'Token Lock', icon: Lock },
 ];
 
 const bottomItems = [

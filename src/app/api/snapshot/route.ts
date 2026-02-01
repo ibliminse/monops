@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
     const batchSize = 50; // Query 50 tokens at a time
     const maxTokens = Math.min(totalSupply, 10000); // Cap at 10k tokens for performance
     let processedTokens = 0;
+    let failedTokens = 0;
 
     console.log(`[Snapshot API] Querying owners for ${maxTokens} tokens...`);
 
@@ -95,17 +96,21 @@ export async function GET(request: NextRequest) {
             functionName: 'ownerOf',
             args: [BigInt(tokenId)],
           });
-          return { tokenId: tokenId.toString(), owner: (owner as string).toLowerCase() };
+          return { tokenId: tokenId.toString(), owner: (owner as string).toLowerCase(), failed: false as const };
         } catch {
-          // Token might not exist (burned or non-sequential IDs)
-          return null;
+          // Could be burned/non-existent token OR an RPC error — caller must check failedTokens
+          return { tokenId: tokenId.toString(), owner: null, failed: true as const };
         }
       });
 
       const results = await Promise.all(ownerPromises);
 
       for (const result of results) {
-        if (result && !ZERO_ADDRESSES.includes(result.owner)) {
+        if (result.failed) {
+          failedTokens++;
+          continue;
+        }
+        if (result.owner && !ZERO_ADDRESSES.includes(result.owner)) {
           if (!holdingsMap.has(result.owner)) {
             holdingsMap.set(result.owner, []);
           }
@@ -134,13 +139,16 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.count - a.count);
 
-    console.log(`[Snapshot API] Complete: ${holders.length} unique holders`);
+    console.log(`[Snapshot API] Complete: ${holders.length} unique holders, ${failedTokens} failed queries`);
 
     return NextResponse.json({
       collection: collectionAddress,
       name: collectionName,
       totalHolders: holders.length,
       totalSupply,
+      scannedTokens: maxTokens,
+      failedTokens,
+      incomplete: failedTokens > 0,
       holders,
     });
   } catch (error) {

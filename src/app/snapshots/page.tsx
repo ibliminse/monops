@@ -33,6 +33,7 @@ import {
   type SnapshotProgress,
 } from '@/features/snapshots';
 import {
+  AlertTriangle,
   Camera,
   Download,
   Loader2,
@@ -55,6 +56,7 @@ export default function SnapshotsPage() {
   const [progress, setProgress] = useState<SnapshotProgress | null>(null);
   const [snapshot, setSnapshot] = useState<HolderSnapshot[] | null>(null);
   const [snapshotName, setSnapshotName] = useState('');
+  const [snapshotWarning, setSnapshotWarning] = useState<string | null>(null);
 
   const handleBuildSnapshot = useCallback(async () => {
     const address = selectedCollection || customAddress;
@@ -63,6 +65,7 @@ export default function SnapshotsPage() {
     setIsBuilding(true);
     setProgress({ stage: 'fetching', currentBlock: 0n, targetBlock: 0n, holdersFound: 0 });
     setSnapshot(null);
+    setSnapshotWarning(null);
 
     // Set snapshot name
     const watchedCollection = collections.find((c) => c.address.toLowerCase() === address.toLowerCase());
@@ -84,6 +87,13 @@ export default function SnapshotsPage() {
       // Use name from API if available
       if (data.name && data.name !== 'Unknown') {
         setSnapshotName(data.name);
+      }
+
+      // Warn if data is incomplete
+      if (data.incomplete && data.failedTokens > 0) {
+        setSnapshotWarning(
+          `${data.failedTokens} of ${data.scannedTokens} tokens could not be queried (RPC errors). This snapshot may be missing holders.`
+        );
       }
 
       // Map to expected format
@@ -246,6 +256,19 @@ export default function SnapshotsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-destructive">{progress.error}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Incomplete Data Warning */}
+      {snapshotWarning && snapshot && (
+        <Card className="border-amber-500/50 bg-amber-500/10">
+          <CardContent className="flex items-start gap-3 pt-6">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-amber-500">Incomplete Snapshot</p>
+              <p className="text-sm text-amber-400/70 mt-1">{snapshotWarning}</p>
+            </div>
           </CardContent>
         </Card>
       )}

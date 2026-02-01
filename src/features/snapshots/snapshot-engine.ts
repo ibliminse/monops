@@ -32,6 +32,7 @@ export interface SnapshotProgress {
   currentBlock: bigint;
   targetBlock: bigint;
   holdersFound: number;
+  failedRanges?: { from: bigint; to: bigint }[];
   error?: string;
 }
 
@@ -72,6 +73,7 @@ export async function buildHolderSnapshot(
 
   const currentBlock = await client.getBlockNumber();
   const fromBlock = currentBlock - BigInt(DEFAULT_SCAN_BLOCK_RANGE);
+  let scanFailedRanges: { from: bigint; to: bigint }[] = [];
 
   // First check if we have cached transfers
   const cachedTransfers = await db.transfers
@@ -92,6 +94,7 @@ export async function buildHolderSnapshot(
   } else {
     // Scan for transfers
     const blockRange = 10000n;
+    const failedRanges: { from: bigint; to: bigint }[] = [];
 
     for (let start = fromBlock; start <= currentBlock; start += blockRange) {
       const end = start + blockRange - 1n > currentBlock ? currentBlock : start + blockRange - 1n;
@@ -101,6 +104,7 @@ export async function buildHolderSnapshot(
         currentBlock: start,
         targetBlock: currentBlock,
         holdersFound: 0,
+        failedRanges,
       });
 
       try {
@@ -153,7 +157,13 @@ export async function buildHolderSnapshot(
         await sleep(50);
       } catch (error) {
         console.error(`Error fetching logs for blocks ${start}-${end}:`, error);
+        failedRanges.push({ from: start, to: end });
       }
+    }
+
+    scanFailedRanges = failedRanges;
+    if (failedRanges.length > 0) {
+      console.warn(`[Snapshot] ${failedRanges.length} block range(s) failed — snapshot may be incomplete`);
     }
   }
 
@@ -232,6 +242,7 @@ export async function buildHolderSnapshot(
     currentBlock: currentBlock,
     targetBlock: currentBlock,
     holdersFound: holders.length,
+    failedRanges: scanFailedRanges.length > 0 ? scanFailedRanges : undefined,
   });
 
   return holders;

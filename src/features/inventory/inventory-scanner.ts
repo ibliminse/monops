@@ -30,6 +30,7 @@ export interface SyncProgress {
   targetBlock: bigint;
   transfersFound: number;
   holdingsUpdated: number;
+  failedRanges?: { from: bigint; to: bigint }[];
   error?: string;
 }
 
@@ -38,13 +39,19 @@ export type SyncProgressCallback = (progress: SyncProgress) => void;
 /**
  * Scan Transfer events for an ERC-721 collection
  */
+interface ScanResult {
+  transfers: TransferEvent[];
+  failedRanges: { from: bigint; to: bigint }[];
+}
+
 async function scanERC721Transfers(
   collectionAddress: Address,
   fromBlock: bigint,
   toBlock: bigint,
   onProgress?: SyncProgressCallback
-): Promise<TransferEvent[]> {
+): Promise<ScanResult> {
   const transfers: TransferEvent[] = [];
+  const failedRanges: { from: bigint; to: bigint }[] = [];
   const blockRange = 10000n; // Scan 10k blocks at a time
 
   for (let start = fromBlock; start <= toBlock; start += blockRange) {
@@ -85,11 +92,11 @@ async function scanERC721Transfers(
       await sleep(50);
     } catch (error) {
       console.error(`Error fetching logs for blocks ${start}-${end}:`, error);
-      // Continue with next batch
+      failedRanges.push({ from: start, to: end });
     }
   }
 
-  return transfers;
+  return { transfers, failedRanges };
 }
 
 /**
@@ -100,8 +107,9 @@ async function scanERC1155Transfers(
   fromBlock: bigint,
   toBlock: bigint,
   onProgress?: SyncProgressCallback
-): Promise<TransferEvent[]> {
+): Promise<ScanResult> {
   const transfers: TransferEvent[] = [];
+  const failedRanges: { from: bigint; to: bigint }[] = [];
   const blockRange = 10000n;
 
   for (let start = fromBlock; start <= toBlock; start += blockRange) {
@@ -167,10 +175,11 @@ async function scanERC1155Transfers(
       await sleep(50);
     } catch (error) {
       console.error(`Error fetching logs for blocks ${start}-${end}:`, error);
+      failedRanges.push({ from: start, to: end });
     }
   }
 
-  return transfers;
+  return { transfers, failedRanges };
 }
 
 /**
@@ -242,7 +251,7 @@ export async function syncCollection(
     });
 
     // Scan transfers based on collection type
-    const transfers = collection.type === 'ERC721'
+    const scanResult = collection.type === 'ERC721'
       ? await scanERC721Transfers(
           collection.address as Address,
           fromBlock,
@@ -255,6 +264,12 @@ export async function syncCollection(
           currentBlock,
           onProgress
         );
+
+    const { transfers, failedRanges } = scanResult;
+
+    if (failedRanges.length > 0) {
+      console.warn(`[Inventory] ${failedRanges.length} block range(s) failed during sync — inventory may be incomplete`);
+    }
 
     onProgress?.({
       stage: 'processing',
@@ -319,6 +334,7 @@ export async function syncCollection(
       targetBlock: currentBlock,
       transfersFound: transfers.length,
       holdingsUpdated: holdingsMap.size,
+      failedRanges: failedRanges.length > 0 ? failedRanges : undefined,
     });
 
     return { success: true, holdingsCount: holdingsMap.size };

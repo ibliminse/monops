@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 const GITHUB_REPO = 'https://github.com/ibliminse/monops';
-const STREAM_CONTRACT = '0x0aEBF71e5ee5C488b8193D5B5AdC7Fe0cb5Ac0C3';
+const STREAM_CONTRACT = '0x45060bA620768a20c792E60fbc6161344cA22a12';
 const LOCK_CONTRACT = '0xC4Ca03a135B6dE0Dba430e28de5fe9C10cA99CB0';
 
 export default function DocsPage() {
@@ -50,8 +50,8 @@ export default function DocsPage() {
     {
       name: 'TokenStream',
       address: STREAM_CONTRACT,
-      description: 'Handles token streaming with linear vesting. Senders can cancel, recipients can claim vested amounts.',
-      features: ['Linear vesting', 'Cancellable by sender', 'Claimable anytime', 'No admin functions'],
+      description: 'Handles token streaming with linear vesting. Streams are immutable once created and cannot be cancelled.',
+      features: ['Linear vesting', 'Immutable streams', 'Claimable anytime', 'No admin functions'],
     },
     {
       name: 'TokenLock',
@@ -303,7 +303,7 @@ export default function DocsPage() {
             },
             {
               q: 'Can someone cancel my stream and take my tokens?',
-              a: 'Only the stream sender can cancel. When cancelled, vested tokens go to the recipient, unvested tokens return to sender. No one else can touch the funds.',
+              a: 'No. Streams are immutable once created and cannot be cancelled by anyone. Tokens vest linearly and the recipient can withdraw vested amounts at any time.',
             },
             {
               q: 'Are the contracts audited?',

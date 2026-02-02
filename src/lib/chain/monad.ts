@@ -33,15 +33,26 @@ export const monadMainnet = defineChain({
 
 // Network guardrail constants
 export const MONAD_CHAIN_ID = 143;
+export const MONAD_CHAIN_ID_HEX = '0x8f';
 export const MONAD_SYMBOL = 'MON';
 
-// Default scan parameters
-export const DEFAULT_SCAN_BLOCK_RANGE = 500_000;
-export const MAX_LOGS_PER_REQUEST = 10_000;
+// RPC endpoints in priority order
+export const MONAD_RPC_PRIMARY = process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://rpc.monad.xyz';
+export const MONAD_RPC_FALLBACKS: string[] = [
+  // Add backup RPCs here as Monad ecosystem grows
+];
 
-// Rate limiting helpers (25 rps for public RPC)
-export const RPC_RATE_LIMIT_RPS = 25;
-export const RPC_BATCH_LIMIT = 100;
+// Etherscan V2 API (supports Monad via chainid parameter)
+export const ETHERSCAN_API_BASE = 'https://api.etherscan.io/v2/api';
+
+// Moralis API
+export const MORALIS_API_BASE = 'https://deep-index.moralis.io/api/v2.2';
+
+// Default scan parameters (configurable via env)
+export const DEFAULT_SCAN_BLOCK_RANGE = Number(
+  process.env.NEXT_PUBLIC_SCAN_BLOCK_RANGE || '500000'
+);
+export const MAX_LOGS_PER_REQUEST = 10_000;
 
 /**
  * Check if the provided chain ID matches Monad mainnet

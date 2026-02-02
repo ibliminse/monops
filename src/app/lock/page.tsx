@@ -19,6 +19,7 @@ import {
 import { NetworkGuard } from '@/components/network-guard';
 import { PageWrapper, PageHeader, AnimatedCard, StatCard } from '@/components/ui/page-wrapper';
 import { getPublicClient } from '@/lib/chain/client';
+import { TOKEN_LOCK_ADDRESS } from '@/lib/contracts';
 import {
   Lock,
   Calendar,
@@ -67,8 +68,6 @@ interface LockInfo {
   claimable: bigint;
 }
 
-// TODO: Deploy this contract and update the address
-const LOCK_CONTRACT_ADDRESS: Address = '0xC4Ca03a135B6dE0Dba430e28de5fe9C10cA99CB0';
 
 export default function LockPage() {
   const { address } = useAccount();
@@ -104,7 +103,7 @@ export default function LockPage() {
     if (address && tokens.length === 0 && !loadingTokens) {
       setLoadingTokens(true);
       fetch(`/api/tokens?address=${address}`)
-        .then((res) => res.json())
+        .then((res) => { if (!res.ok) throw new Error('Failed to fetch tokens'); return res.json(); })
         .then((data) => {
           if (data.tokens) {
             setTokens(data.tokens);
@@ -118,12 +117,12 @@ export default function LockPage() {
   const selectedTokenData = tokens.find((t) => t.address === selectedToken);
 
   // Check if contract is deployed
-  const isContractDeployed = LOCK_CONTRACT_ADDRESS !== null;
+  const isContractDeployed = TOKEN_LOCK_ADDRESS !== null;
 
   // Create simple lock
   const handleCreateLock = useCallback(async () => {
     if (!address || !walletClient || !selectedToken || !amount || !unlockDate) return;
-    if (!LOCK_CONTRACT_ADDRESS) return;
+    if (!TOKEN_LOCK_ADDRESS) return;
 
     setIsExecuting(true);
     setResult(null);
@@ -140,7 +139,7 @@ export default function LockPage() {
         address: selectedToken as Address,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [LOCK_CONTRACT_ADDRESS, amountWei],
+        args: [TOKEN_LOCK_ADDRESS, amountWei],
       });
 
       // Wait for approval
@@ -149,7 +148,7 @@ export default function LockPage() {
 
       // Create the lock
       const lockHash = await walletClient.writeContract({
-        address: LOCK_CONTRACT_ADDRESS,
+        address: TOKEN_LOCK_ADDRESS,
         abi: LOCK_ABI,
         functionName: 'createLock',
         args: [selectedToken as Address, amountWei, BigInt(unlockTimestamp)],
@@ -171,7 +170,7 @@ export default function LockPage() {
   // Create vesting lock
   const handleCreateVestingLock = useCallback(async () => {
     if (!address || !walletClient || !selectedToken || !amount || !vestingStart || !vestingEnd) return;
-    if (!LOCK_CONTRACT_ADDRESS) return;
+    if (!TOKEN_LOCK_ADDRESS) return;
 
     setIsExecuting(true);
     setResult(null);
@@ -190,7 +189,7 @@ export default function LockPage() {
         address: selectedToken as Address,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [LOCK_CONTRACT_ADDRESS, amountWei],
+        args: [TOKEN_LOCK_ADDRESS, amountWei],
       });
 
       const client = getPublicClient();
@@ -198,7 +197,7 @@ export default function LockPage() {
 
       // Create vesting lock
       const lockHash = await walletClient.writeContract({
-        address: LOCK_CONTRACT_ADDRESS,
+        address: TOKEN_LOCK_ADDRESS,
         abi: LOCK_ABI,
         functionName: 'createVestingLock',
         args: [selectedToken as Address, amountWei, BigInt(startTimestamp), BigInt(endTimestamp), BigInt(cliffDuration)],

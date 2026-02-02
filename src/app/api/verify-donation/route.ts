@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http, parseEther, type Hash, defineChain } from 'viem';
-
-// Define chain inline to avoid import issues
-const monadMainnet = defineChain({
-  id: 143,
-  name: 'Monad',
-  nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 },
-  rpcUrls: {
-    default: { http: ['https://rpc.monad.xyz'] },
-  },
-});
-
-// Donation wallet address
-const DONATION_WALLET = '0x418e804EBe896D68B6e89Bf2401410e5DE6c701a';
-
-const client = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+import { parseEther, type Hash } from 'viem';
+import { createServerClient } from '@/lib/chain/client';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { DONATION_WALLET } from '@/lib/db/plan';
+import { isValidAddress } from '@/lib/utils';
 
 const MIN_DONATION = parseEther('1'); // 1 MON minimum
 
 export async function POST(request: NextRequest) {
+  const { limited, retryAfterMs } = rateLimit('verify-donation', getClientIp(request), { windowMs: 60_000, maxRequests: 5 });
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+    );
+  }
+
   try {
     const { txHash, walletAddress } = await request.json();
 
@@ -31,6 +25,22 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+      return NextResponse.json(
+        { error: 'Invalid transaction hash format' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidAddress(walletAddress)) {
+      return NextResponse.json(
+        { error: 'Invalid wallet address format' },
+        { status: 400 }
+      );
+    }
+
+    const client = createServerClient();
 
     // Fetch the transaction
     const tx = await client.getTransaction({ hash: txHash as Hash });

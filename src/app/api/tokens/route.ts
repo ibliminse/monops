@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { MONAD_CHAIN_ID_HEX, ETHERSCAN_API_BASE, MORALIS_API_BASE } from '@/lib/chain/monad';
+import { isValidAddress } from '@/lib/utils';
 
-const MONAD_CHAIN_ID = '0x8f'; // 143 in hex
+const isDev = process.env.NODE_ENV === 'development';
 
 interface MoralisToken {
   token_address: string;
@@ -12,24 +15,32 @@ interface MoralisToken {
 }
 
 export async function GET(request: NextRequest) {
+  const { limited, retryAfterMs } = rateLimit('tokens', getClientIp(request), { windowMs: 60_000, maxRequests: 10 });
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
 
-  if (!address) {
-    return NextResponse.json({ error: 'Address is required' }, { status: 400 });
+  if (!address || !isValidAddress(address)) {
+    return NextResponse.json({ error: 'Valid Ethereum address is required' }, { status: 400 });
   }
 
-  console.log('[Token API] Fetching tokens for', address);
+  isDev && console.log('[Token API] Fetching tokens for', address);
 
   // Try Moralis first
   const moralisKey = process.env.MORALIS_API_KEY;
 
   if (moralisKey) {
     try {
-      console.log('[Token API] Using Moralis API');
+      isDev && console.log('[Token API] Using Moralis API');
 
-      const url = new URL(`https://deep-index.moralis.io/api/v2.2/${address}/erc20`);
-      url.searchParams.set('chain', MONAD_CHAIN_ID);
+      const url = new URL(`${MORALIS_API_BASE}/${address}/erc20`);
+      url.searchParams.set('chain', MONAD_CHAIN_ID_HEX);
 
       const response = await fetch(url.toString(), {
         headers: {
@@ -43,7 +54,7 @@ export async function GET(request: NextRequest) {
       }
 
       const tokens: MoralisToken[] = await response.json();
-      console.log(`[Token API] Moralis found ${tokens.length} tokens`);
+      isDev && console.log(`[Token API] Moralis found ${tokens.length} tokens`);
 
       // Filter out zero balances and format response
       const validTokens = tokens
@@ -71,12 +82,12 @@ export async function GET(request: NextRequest) {
   const etherscanKey = process.env.NEXT_PUBLIC_MONADSCAN_API_KEY;
 
   if (!etherscanKey) {
-    console.log('[Token API] No API keys configured');
+    isDev && console.log('[Token API] No API keys configured');
     return NextResponse.json({ error: 'No API keys configured' }, { status: 500 });
   }
 
   try {
-    console.log('[Token API] Using Etherscan V2 API');
+    isDev && console.log('[Token API] Using Etherscan V2 API');
 
     interface EtherscanTransfer {
       contractAddress: string;
@@ -92,30 +103,54 @@ export async function GET(request: NextRequest) {
     const allTransfers: EtherscanTransfer[] = [];
     let page = 1;
     const pageSize = 100;
+    const maxPages = 10;
     let hasMore = true;
+    let paginationInterrupted = false;
 
     // Fetch token transfers
-    while (hasMore && page <= 10) { // Limit to 10 pages
-      const url = `https://api.etherscan.io/v2/api?chainid=143&module=account&action=tokentx&address=${address}&page=${page}&offset=${pageSize}&sort=desc&apikey=${etherscanKey}`;
+    while (hasMore && page <= maxPages) {
+      const url = new URL(ETHERSCAN_API_BASE);
+      url.searchParams.set('chainid', '143');
+      url.searchParams.set('module', 'account');
+      url.searchParams.set('action', 'tokentx');
+      url.searchParams.set('address', address);
+      url.searchParams.set('page', String(page));
+      url.searchParams.set('offset', String(pageSize));
+      url.searchParams.set('sort', 'desc');
+      url.searchParams.set('apikey', etherscanKey);
 
-      const response = await fetch(url);
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        console.error(`[Token API] Etherscan HTTP error: ${response.status}`);
+        if (allTransfers.length > 0) paginationInterrupted = true;
+        hasMore = false;
+        continue;
+      }
       const data = await response.json();
 
       if (data.status === '1' && Array.isArray(data.result)) {
         allTransfers.push(...data.result);
-        console.log(`[Token API] Etherscan page ${page}: ${data.result.length} transfers`);
+        isDev && console.log(`[Token API] Etherscan page ${page}: ${data.result.length} transfers`);
 
         if (data.result.length < pageSize) {
+          hasMore = false;
+        } else if (page >= maxPages) {
+          paginationInterrupted = true;
+          isDev && console.warn(`[Token API] Etherscan pagination capped at ${maxPages} pages — data may be incomplete`);
           hasMore = false;
         } else {
           page++;
         }
       } else {
+        if (allTransfers.length > 0) {
+          paginationInterrupted = true;
+          isDev && console.warn(`[Token API] Etherscan pagination stopped at page ${page} — data may be incomplete`);
+        }
         hasMore = false;
       }
     }
 
-    console.log(`[Token API] Etherscan total transfers: ${allTransfers.length}`);
+    isDev && console.log(`[Token API] Etherscan total transfers: ${allTransfers.length}`);
 
     // Calculate token balances from transfer history
     const balances = new Map<string, {
@@ -139,7 +174,7 @@ export async function GET(request: NextRequest) {
           address: transfer.contractAddress,
           symbol: transfer.tokenSymbol,
           name: transfer.tokenName,
-          decimals: parseInt(transfer.tokenDecimal, 10),
+          decimals: parseInt(transfer.tokenDecimal, 10) || 18,
           balance: 0n,
         });
       }
@@ -164,10 +199,11 @@ export async function GET(request: NextRequest) {
         formattedBalance: formatBalance(t.balance.toString(), t.decimals),
       }));
 
-    console.log(`[Token API] Found ${validTokens.length} tokens with balance`);
+    isDev && console.log(`[Token API] Found ${validTokens.length} tokens with balance`);
 
     return NextResponse.json({
       source: 'etherscan',
+      incomplete: paginationInterrupted,
       tokens: validTokens,
     });
   } catch (error) {

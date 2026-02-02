@@ -1,8 +1,8 @@
 import { db, type WatchedCollection } from '@/lib/db';
 import { isValidAddress } from '@/lib/utils';
 import { getPlanLimits } from '@/lib/db/plan';
-import { createPublicClient, http, getAddress } from 'viem';
-import { monadMainnet } from '@/lib/chain';
+import { getAddress } from 'viem';
+import { getPublicClient } from '@/lib/chain';
 import { ERC721_ABI, ERC1155_ABI, INTERFACE_IDS } from '@/lib/chain/abis';
 
 export interface AddCollectionInput {
@@ -16,10 +16,7 @@ export interface CollectionStoreError {
   message: string;
 }
 
-const client = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+const client = getPublicClient();
 
 /**
  * Detect if a contract is ERC-721 or ERC-1155

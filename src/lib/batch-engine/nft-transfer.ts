@@ -1,14 +1,12 @@
 import {
-  createPublicClient,
   createWalletClient,
-  http,
   type Address,
   type WalletClient,
   type PublicClient,
   custom,
   encodeFunctionData,
 } from 'viem';
-import { monadMainnet } from '@/lib/chain';
+import { getPublicClient, monadMainnet } from '@/lib/chain';
 import { ERC721_ABI, ERC1155_ABI } from '@/lib/chain/abis';
 import {
   type NFTTransferItem,
@@ -19,10 +17,7 @@ import {
 import { createBatch, updateBatchStatus, updateBatchItem, getBatch } from './batch-store';
 import { isValidAddress } from '@/lib/utils';
 
-const publicClient = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+const publicClient = getPublicClient();
 
 /**
  * Validate and run preflight checks for NFT transfers

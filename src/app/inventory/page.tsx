@@ -20,11 +20,12 @@ import {
   List,
   Layers,
   Hash,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function InventoryPage() {
   const { address, isConnected } = useAccount();
-  const { isLoading, isSyncingNFTs, progress, refresh } = useWalletSync();
+  const { isLoading, isSyncingNFTs, progress, warning, refresh } = useWalletSync();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Get collections and holdings for connected wallet
@@ -160,6 +161,26 @@ export default function InventoryPage() {
                 <Loader2 className="h-5 w-5 text-purple-400" />
               </motion.div>
               <span className="text-white/70">{progress}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Incomplete Data Warning */}
+      <AnimatePresence>
+        {warning && !isSyncingNFTs && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="glass-card rounded-2xl p-4 border-amber-500/30 bg-amber-500/10"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-400">Incomplete Data</p>
+                <p className="text-sm text-amber-400/70 mt-1">{warning}</p>
+              </div>
             </div>
           </motion.div>
         )}

@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { NetworkGuard } from '@/components/network-guard';
 import { getPublicClient } from '@/lib/chain/client';
+import { TOKEN_STREAM_ADDRESS } from '@/lib/contracts';
 import {
   Waves,
   ArrowLeft,
@@ -89,9 +90,6 @@ const STREAM_ABI = parseAbi([
   'function createStream(address recipient, address token, uint256 amount, uint256 startTime, uint256 endTime, uint256 cliffDuration) returns (uint256 streamId)',
   'function createStreamBatch(address[] recipients, address token, uint256[] amounts, uint256 startTime, uint256 endTime, uint256 cliffDuration) returns (uint256[] streamIds)',
 ]);
-
-// TODO: Deploy this contract and update the address
-const STREAM_CONTRACT_ADDRESS: Address = '0x45060bA620768a20c792E60fbc6161344cA22a12';
 
 export default function CreateStreamPage() {
   const router = useRouter();
@@ -140,14 +138,14 @@ export default function CreateStreamPage() {
   } | null>(null);
 
   // Contract check
-  const isContractDeployed = STREAM_CONTRACT_ADDRESS !== null;
+  const isContractDeployed = TOKEN_STREAM_ADDRESS !== null;
 
   // Load tokens
   useEffect(() => {
     if (address && tokens.length === 0 && !loadingTokens) {
       setLoadingTokens(true);
       fetch(`/api/tokens?address=${address}`)
-        .then((res) => res.json())
+        .then((res) => { if (!res.ok) throw new Error('Failed to fetch tokens'); return res.json(); })
         .then((data) => {
           if (data.tokens) {
             setTokens(data.tokens);
@@ -254,7 +252,7 @@ export default function CreateStreamPage() {
 
   // Run preflight checks
   const runPreflightCheck = useCallback(async () => {
-    if (!selectedTokenData || !STREAM_CONTRACT_ADDRESS) return;
+    if (!selectedTokenData || !TOKEN_STREAM_ADDRESS) return;
 
     setCheckingPreflight(true);
     setPreflightWarnings([]);
@@ -354,7 +352,7 @@ export default function CreateStreamPage() {
 
   // Create single stream
   const handleCreateSingleStream = useCallback(async () => {
-    if (!walletClient || !selectedTokenData || !STREAM_CONTRACT_ADDRESS) return;
+    if (!walletClient || !selectedTokenData || !TOKEN_STREAM_ADDRESS) return;
 
     setIsExecuting(true);
     setResult(null);
@@ -370,7 +368,7 @@ export default function CreateStreamPage() {
         address: selectedToken as Address,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [STREAM_CONTRACT_ADDRESS, amountWei],
+        args: [TOKEN_STREAM_ADDRESS, amountWei],
       });
 
       const client = getPublicClient();
@@ -378,7 +376,7 @@ export default function CreateStreamPage() {
 
       // Create stream
       const createHash = await walletClient.writeContract({
-        address: STREAM_CONTRACT_ADDRESS,
+        address: TOKEN_STREAM_ADDRESS,
         abi: STREAM_ABI,
         functionName: 'createStream',
         args: [
@@ -415,7 +413,7 @@ export default function CreateStreamPage() {
 
   // Create batch streams
   const handleCreateBatchStreams = useCallback(async () => {
-    if (!walletClient || !selectedTokenData || !STREAM_CONTRACT_ADDRESS) return;
+    if (!walletClient || !selectedTokenData || !TOKEN_STREAM_ADDRESS) return;
 
     setIsExecuting(true);
     setResult(null);
@@ -435,7 +433,7 @@ export default function CreateStreamPage() {
         address: selectedToken as Address,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [STREAM_CONTRACT_ADDRESS, totalAmount],
+        args: [TOKEN_STREAM_ADDRESS, totalAmount],
       });
 
       const client = getPublicClient();
@@ -443,7 +441,7 @@ export default function CreateStreamPage() {
 
       // Create batch streams
       const createHash = await walletClient.writeContract({
-        address: STREAM_CONTRACT_ADDRESS,
+        address: TOKEN_STREAM_ADDRESS,
         abi: STREAM_ABI,
         functionName: 'createStreamBatch',
         args: [

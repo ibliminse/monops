@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { MONAD_CHAIN_ID_HEX, ETHERSCAN_API_BASE, MORALIS_API_BASE } from '@/lib/chain/monad';
+import { isValidAddress } from '@/lib/utils';
 
-const MONAD_CHAIN_ID = '0x8f'; // 143 in hex
+const isDev = process.env.NODE_ENV === 'development';
 
 interface MoralisNFT {
   token_address: string;
@@ -28,31 +31,39 @@ interface MoralisResponse {
   result: MoralisNFT[];
 }
 
-// Etherscan V2 fallback
-const ETHERSCAN_API_BASE = 'https://api.etherscan.io/v2/api';
 
 export async function GET(request: NextRequest) {
+  const { limited, retryAfterMs } = rateLimit('nfts', getClientIp(request), { windowMs: 60_000, maxRequests: 10 });
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
 
-  if (!address) {
-    return NextResponse.json({ error: 'Address is required' }, { status: 400 });
+  if (!address || !isValidAddress(address)) {
+    return NextResponse.json({ error: 'Valid Ethereum address is required' }, { status: 400 });
   }
 
-  console.log('[NFT API] Fetching NFTs for', address);
+  isDev && console.log('[NFT API] Fetching NFTs for', address);
 
   // Try Moralis first (complete data)
   const moralisKey = process.env.MORALIS_API_KEY;
 
+  let usedFallback = false;
+
   if (moralisKey) {
     try {
-      console.log('[NFT API] Using Moralis API');
+      isDev && console.log('[NFT API] Using Moralis API');
       const allNFTs: MoralisNFT[] = [];
       let cursor: string | undefined;
 
       do {
-        const url = new URL('https://deep-index.moralis.io/api/v2.2/' + address + '/nft');
-        url.searchParams.set('chain', MONAD_CHAIN_ID);
+        const url = new URL(MORALIS_API_BASE + '/' + address + '/nft');
+        url.searchParams.set('chain', MONAD_CHAIN_ID_HEX);
         url.searchParams.set('format', 'decimal');
         url.searchParams.set('normalizeMetadata', 'true');
         if (cursor) url.searchParams.set('cursor', cursor);
@@ -72,10 +83,10 @@ export async function GET(request: NextRequest) {
         allNFTs.push(...data.result);
         cursor = data.cursor;
 
-        console.log(`[NFT API] Moralis fetched ${allNFTs.length} NFTs so far...`);
+        isDev && console.log(`[NFT API] Moralis fetched ${allNFTs.length} NFTs so far...`);
       } while (cursor);
 
-      console.log(`[NFT API] Moralis total: ${allNFTs.length} NFTs`);
+      isDev && console.log(`[NFT API] Moralis total: ${allNFTs.length} NFTs`);
 
       // Helper to convert IPFS URLs to gateway URLs
       const toGatewayUrl = (url?: string | null): string | undefined => {
@@ -118,6 +129,7 @@ export async function GET(request: NextRequest) {
       });
     } catch (error) {
       console.error('[NFT API] Moralis failed:', error);
+      usedFallback = true;
       // Fall through to Etherscan
     }
   }
@@ -126,12 +138,12 @@ export async function GET(request: NextRequest) {
   const etherscanKey = process.env.NEXT_PUBLIC_MONADSCAN_API_KEY;
 
   if (!etherscanKey) {
-    console.log('[NFT API] No API keys configured');
+    isDev && console.log('[NFT API] No API keys configured');
     return NextResponse.json({ error: 'No API keys configured' }, { status: 500 });
   }
 
   try {
-    console.log('[NFT API] Using Etherscan V2 API');
+    isDev && console.log('[NFT API] Using Etherscan V2 API');
 
     interface EtherscanNFT {
       blockNumber: string;
@@ -146,36 +158,61 @@ export async function GET(request: NextRequest) {
     const allTransfers: EtherscanNFT[] = [];
     let page = 1;
     const pageSize = 100;
+    const maxPages = 10;
     let hasMore = true;
+    let paginationInterrupted = false;
 
-    while (hasMore) {
-      const url = `${ETHERSCAN_API_BASE}?chainid=143&module=account&action=tokennfttx&address=${address}&page=${page}&offset=${pageSize}&sort=desc&apikey=${etherscanKey}`;
+    while (hasMore && page <= maxPages) {
+      const url = new URL(ETHERSCAN_API_BASE);
+      url.searchParams.set('chainid', '143');
+      url.searchParams.set('module', 'account');
+      url.searchParams.set('action', 'tokennfttx');
+      url.searchParams.set('address', address);
+      url.searchParams.set('page', String(page));
+      url.searchParams.set('offset', String(pageSize));
+      url.searchParams.set('sort', 'desc');
+      url.searchParams.set('apikey', etherscanKey);
 
-      const response = await fetch(url);
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        console.error(`[NFT API] Etherscan HTTP error: ${response.status}`);
+        if (allTransfers.length > 0) paginationInterrupted = true;
+        hasMore = false;
+        continue;
+      }
       const data = await response.json();
 
       if (data.status === '1' && Array.isArray(data.result)) {
         allTransfers.push(...data.result);
-        console.log(`[NFT API] Etherscan page ${page}: ${data.result.length} transfers`);
+        isDev && console.log(`[NFT API] Etherscan page ${page}: ${data.result.length} transfers`);
 
         if (data.result.length < pageSize) {
+          hasMore = false;
+        } else if (page >= maxPages) {
+          paginationInterrupted = true;
+          isDev && console.warn(`[NFT API] Etherscan pagination capped at ${maxPages} pages — data may be incomplete`);
           hasMore = false;
         } else {
           page++;
         }
       } else {
+        // Pagination stopped before completion — data may be partial
+        if (allTransfers.length > 0) {
+          paginationInterrupted = true;
+          isDev && console.warn(`[NFT API] Etherscan pagination stopped at page ${page} — data may be incomplete`);
+        }
         hasMore = false;
       }
     }
 
-    console.log(`[NFT API] Etherscan total transfers: ${allTransfers.length}`);
+    isDev && console.log(`[NFT API] Etherscan total transfers: ${allTransfers.length}`);
 
     // Calculate current holdings
     const holdings = new Map<string, { contractAddress: string; tokenId: string; name: string; symbol: string }>();
     const normalizedOwner = address.toLowerCase();
 
     const sortedTransfers = [...allTransfers].sort(
-      (a, b) => parseInt(a.blockNumber) - parseInt(b.blockNumber)
+      (a, b) => (parseInt(a.blockNumber, 10) || 0) - (parseInt(b.blockNumber, 10) || 0)
     );
 
     for (const transfer of sortedTransfers) {
@@ -196,7 +233,7 @@ export async function GET(request: NextRequest) {
     }
 
     const nfts = Array.from(holdings.values());
-    console.log(`[NFT API] Etherscan current holdings: ${nfts.length}`);
+    isDev && console.log(`[NFT API] Etherscan current holdings: ${nfts.length}`);
 
     // Group by collection
     const grouped: Record<string, { name: string; symbol: string; nfts: Array<{ tokenId: string }> }> = {};
@@ -216,6 +253,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       totalNFTs: nfts.length,
       source: 'etherscan',
+      usedFallback,
+      incomplete: paginationInterrupted,
       collections: Object.entries(grouped).map(([address, data]) => ({
         address,
         name: data.name,

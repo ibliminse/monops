@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http, type Address, parseAbi } from 'viem';
+import { type Address, parseAbi } from 'viem';
+import { createServerClient } from '@/lib/chain/client';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { isValidAddress } from '@/lib/utils';
 
-const MONAD_RPC = process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://rpc.monad.xyz';
-
-const client = createPublicClient({
-  transport: http(MONAD_RPC),
-});
+const isDev = process.env.NODE_ENV === 'development';
+const client = createServerClient();
 
 // ERC-721 ABI for reading owner data
 const ERC721_ABI = parseAbi([
@@ -25,14 +25,22 @@ async function sleep(ms: number) {
 }
 
 export async function GET(request: NextRequest) {
+  const { limited, retryAfterMs } = rateLimit('snapshot', getClientIp(request), { windowMs: 60_000, maxRequests: 3 });
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const collectionAddress = searchParams.get('collection');
 
-  if (!collectionAddress) {
-    return NextResponse.json({ error: 'Collection address is required' }, { status: 400 });
+  if (!collectionAddress || !isValidAddress(collectionAddress)) {
+    return NextResponse.json({ error: 'Valid collection address is required' }, { status: 400 });
   }
 
-  console.log('[Snapshot API] Building snapshot for', collectionAddress);
+  isDev && console.log('[Snapshot API] Building snapshot for', collectionAddress);
 
   try {
     // First, get totalSupply to know how many tokens exist
@@ -54,7 +62,7 @@ export async function GET(request: NextRequest) {
       ]);
       totalSupply = Number(supply);
       collectionName = name as string;
-      console.log(`[Snapshot API] Collection: ${collectionName}, Total Supply: ${totalSupply}`);
+      isDev && console.log(`[Snapshot API] Collection: ${collectionName}, Total Supply: ${totalSupply}`);
     } catch (error) {
       console.error('[Snapshot API] Failed to get totalSupply:', error);
       return NextResponse.json(
@@ -81,7 +89,7 @@ export async function GET(request: NextRequest) {
     let processedTokens = 0;
     let failedTokens = 0;
 
-    console.log(`[Snapshot API] Querying owners for ${maxTokens} tokens...`);
+    isDev && console.log(`[Snapshot API] Querying owners for ${maxTokens} tokens...`);
 
     for (let startId = 1; startId <= maxTokens; startId += batchSize) {
       const endId = Math.min(startId + batchSize - 1, maxTokens);
@@ -123,7 +131,7 @@ export async function GET(request: NextRequest) {
       // Progress logging every 500 tokens
       if (processedTokens % 500 === 0 || processedTokens === maxTokens) {
         const progress = Math.round((processedTokens / maxTokens) * 100);
-        console.log(`[Snapshot API] Progress: ${progress}% (${processedTokens}/${maxTokens} tokens)`);
+        isDev && console.log(`[Snapshot API] Progress: ${progress}% (${processedTokens}/${maxTokens} tokens)`);
       }
 
       // Rate limit
@@ -139,7 +147,7 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.count - a.count);
 
-    console.log(`[Snapshot API] Complete: ${holders.length} unique holders, ${failedTokens} failed queries`);
+    isDev && console.log(`[Snapshot API] Complete: ${holders.length} unique holders, ${failedTokens} failed queries`);
 
     return NextResponse.json({
       collection: collectionAddress,

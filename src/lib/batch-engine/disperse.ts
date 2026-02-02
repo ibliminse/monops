@@ -1,12 +1,10 @@
 import {
-  createPublicClient,
-  http,
   type Address,
   type WalletClient,
   parseEther,
   formatEther,
 } from 'viem';
-import { monadMainnet } from '@/lib/chain';
+import { getPublicClient, monadMainnet } from '@/lib/chain';
 import { ERC20_ABI } from '@/lib/chain/abis';
 import {
   type DisperseItem,
@@ -18,10 +16,7 @@ import {
 import { createBatch, updateBatchStatus, updateBatchItem, getBatch } from './batch-store';
 import { isValidAddress } from '@/lib/utils';
 
-const publicClient = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+const publicClient = getPublicClient();
 
 /**
  * Validate and run preflight checks for MON disperse

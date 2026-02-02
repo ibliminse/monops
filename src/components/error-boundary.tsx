@@ -2,7 +2,7 @@
 
 import { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -12,15 +12,16 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  showResetConfirm: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, showResetConfirm: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
@@ -28,12 +29,16 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  handleReset = () => {
-    // Clear IndexedDB if it might be corrupted
+  handleReload = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
+
+  handleResetData = () => {
     if (typeof window !== 'undefined' && window.indexedDB) {
       window.indexedDB.deleteDatabase('monops');
     }
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, showResetConfirm: false });
     window.location.reload();
   };
 
@@ -55,13 +60,46 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-white/50 mb-6 text-sm">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
-            <Button
-              onClick={this.handleReset}
-              className="bg-purple-500 hover:bg-purple-600"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset & Reload
-            </Button>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={this.handleReload}
+                className="bg-purple-500 hover:bg-purple-600 w-full"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              {!this.state.showResetConfirm ? (
+                <Button
+                  variant="outline"
+                  onClick={() => this.setState({ showResetConfirm: true })}
+                  className="w-full text-white/50 border-white/10 hover:text-white hover:border-white/20"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear Data & Reload
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+                  <p className="text-red-400 text-sm mb-3">
+                    This will delete all locally stored data (holdings, collections, batch history). This cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => this.setState({ showResetConfirm: false })}
+                      className="flex-1 text-white/50 border-white/10"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={this.handleResetData}
+                      className="flex-1 bg-red-500 hover:bg-red-600"
+                    >
+                      Delete & Reload
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );

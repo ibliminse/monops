@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { NetworkGuard } from '@/components/network-guard';
 import { PageWrapper, PageHeader, StatCard, AnimatedCard, EmptyState } from '@/components/ui/page-wrapper';
 import { getPublicClient } from '@/lib/chain/client';
+import { TOKEN_STREAM_ADDRESS } from '@/lib/contracts';
 import { cn } from '@/lib/utils';
 import {
   Waves,
@@ -58,8 +59,6 @@ interface StreamInfo {
   status: 'scheduled' | 'streaming' | 'completed';
 }
 
-const STREAM_CONTRACT_ADDRESS: Address = '0x45060bA620768a20c792E60fbc6161344cA22a12';
-
 const tokenCache: Record<string, { symbol: string; decimals: number }> = {};
 
 export default function StreamsPage() {
@@ -72,7 +71,7 @@ export default function StreamsPage() {
   const [withdrawing, setWithdrawing] = useState<bigint | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isContractDeployed = STREAM_CONTRACT_ADDRESS !== null;
+  const isContractDeployed = TOKEN_STREAM_ADDRESS !== null;
 
   const getTokenInfo = useCallback(async (tokenAddress: Address) => {
     if (tokenCache[tokenAddress]) return tokenCache[tokenAddress];
@@ -107,7 +106,7 @@ export default function StreamsPage() {
   };
 
   const loadStreams = useCallback(async () => {
-    if (!address || !STREAM_CONTRACT_ADDRESS) return;
+    if (!address || !TOKEN_STREAM_ADDRESS) return;
 
     setLoading(true);
     setError(null);
@@ -116,7 +115,7 @@ export default function StreamsPage() {
       const client = getPublicClient();
 
       const streamIds = await client.readContract({
-        address: STREAM_CONTRACT_ADDRESS,
+        address: TOKEN_STREAM_ADDRESS,
         abi: STREAM_ABI,
         functionName: tab === 'incoming' ? 'getRecipientStreams' : 'getSenderStreams',
         args: [address],
@@ -126,13 +125,13 @@ export default function StreamsPage() {
         streamIds.map(async (id) => {
           const [streamData, withdrawable] = await Promise.all([
             client.readContract({
-              address: STREAM_CONTRACT_ADDRESS,
+              address: TOKEN_STREAM_ADDRESS,
               abi: STREAM_ABI,
               functionName: 'getStream',
               args: [id],
             }),
             client.readContract({
-              address: STREAM_CONTRACT_ADDRESS,
+              address: TOKEN_STREAM_ADDRESS,
               abi: STREAM_ABI,
               functionName: 'getWithdrawableAmount',
               args: [id],
@@ -187,12 +186,12 @@ export default function StreamsPage() {
   }, [address, tab, isContractDeployed, loadStreams]);
 
   const handleWithdraw = useCallback(async (streamId: bigint) => {
-    if (!walletClient || !STREAM_CONTRACT_ADDRESS) return;
+    if (!walletClient || !TOKEN_STREAM_ADDRESS) return;
 
     setWithdrawing(streamId);
     try {
       const hash = await walletClient.writeContract({
-        address: STREAM_CONTRACT_ADDRESS,
+        address: TOKEN_STREAM_ADDRESS,
         abi: STREAM_ABI,
         functionName: 'withdraw',
         args: [streamId],
@@ -209,7 +208,7 @@ export default function StreamsPage() {
   }, [walletClient, loadStreams]);
 
   const handleWithdrawAll = useCallback(async () => {
-    if (!walletClient || !STREAM_CONTRACT_ADDRESS) return;
+    if (!walletClient || !TOKEN_STREAM_ADDRESS) return;
 
     const withdrawableStreams = streams.filter(s => s.withdrawable > 0n);
     if (withdrawableStreams.length === 0) return;
@@ -217,7 +216,7 @@ export default function StreamsPage() {
     setWithdrawing(-1n);
     try {
       const hash = await walletClient.writeContract({
-        address: STREAM_CONTRACT_ADDRESS,
+        address: TOKEN_STREAM_ADDRESS,
         abi: STREAM_ABI,
         functionName: 'withdrawBatch',
         args: [withdrawableStreams.map(s => s.id)],

@@ -1,13 +1,10 @@
-import { createPublicClient, http, type Address, parseAbiItem, getAddress, zeroAddress } from 'viem';
-import { monadMainnet, DEFAULT_SCAN_BLOCK_RANGE, MAX_LOGS_PER_REQUEST } from '@/lib/chain';
+import { type Address, parseAbiItem, getAddress, zeroAddress } from 'viem';
+import { DEFAULT_SCAN_BLOCK_RANGE, MAX_LOGS_PER_REQUEST, getPublicClient } from '@/lib/chain';
 import { db, type NFTHolding, type TransferEvent, type WatchedCollection } from '@/lib/db';
 import { sleep, chunk } from '@/lib/utils';
 import { updateCollectionSyncState } from './collection-store';
 
-const client = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+const client = getPublicClient();
 
 // ERC-721 Transfer event signature
 const ERC721_TRANSFER_EVENT = parseAbiItem(

@@ -17,10 +17,9 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import { TOKEN_STREAM_ADDRESS, TOKEN_LOCK_ADDRESS } from '@/lib/contracts';
 
 const GITHUB_REPO = 'https://github.com/ibliminse/monops';
-const STREAM_CONTRACT = '0x45060bA620768a20c792E60fbc6161344cA22a12';
-const LOCK_CONTRACT = '0xC4Ca03a135B6dE0Dba430e28de5fe9C10cA99CB0';
 
 export default function DocsPage() {
   const securityFeatures = [
@@ -49,13 +48,13 @@ export default function DocsPage() {
   const contracts = [
     {
       name: 'TokenStream',
-      address: STREAM_CONTRACT,
+      address: TOKEN_STREAM_ADDRESS,
       description: 'Handles token streaming with linear vesting. Streams are immutable once created and cannot be cancelled.',
       features: ['Linear vesting', 'Immutable streams', 'Claimable anytime', 'No admin functions'],
     },
     {
       name: 'TokenLock',
-      address: LOCK_CONTRACT,
+      address: TOKEN_LOCK_ADDRESS,
       description: 'Time-locks tokens with optional vesting schedules and cliff periods.',
       features: ['Simple time locks', 'Vesting schedules', 'Cliff periods', 'No admin functions'],
     },
@@ -214,6 +213,75 @@ export default function DocsPage() {
               </div>
             </AnimatedCard>
           ))}
+
+          {/* Verification Guide */}
+          <AnimatedCard delay={0.25}>
+            <div className="p-5 md:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-green-500/20">
+                  <Shield className="h-5 w-5 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">How to Verify: No Admin Keys</h3>
+                  <p className="text-sm text-white/50 mt-2">
+                    Both contracts can be independently verified on-chain. Here is what to check:
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-sm text-white/60">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span>No <code className="text-cyan-400">Ownable</code> or <code className="text-cyan-400">AccessControl</code> inheritance — there is no owner who can modify contract behavior</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span>No <code className="text-cyan-400">pause()</code> or <code className="text-cyan-400">kill()</code> functions — nobody can freeze withdrawals</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span>No proxy pattern — the deployed bytecode is final and cannot be swapped</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span>Uses <code className="text-cyan-400">ReentrancyGuard</code> and <code className="text-cyan-400">SafeERC20</code> from OpenZeppelin 5</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                <a
+                  href={`https://monadvision.com/address/${TOKEN_STREAM_ADDRESS}#code`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white/[0.05] rounded-lg text-white/70 hover:bg-white/[0.1] transition-colors"
+                >
+                  <FileCode className="h-4 w-4" />
+                  TokenStream Source
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <a
+                  href={`https://monadvision.com/address/${TOKEN_LOCK_ADDRESS}#code`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white/[0.05] rounded-lg text-white/70 hover:bg-white/[0.1] transition-colors"
+                >
+                  <FileCode className="h-4 w-4" />
+                  TokenLock Source
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <a
+                  href={`${GITHUB_REPO}/tree/main/contracts`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white/[0.05] rounded-lg text-white/70 hover:bg-white/[0.1] transition-colors"
+                >
+                  <Github className="h-4 w-4" />
+                  GitHub Contracts
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+          </AnimatedCard>
         </div>
       </div>
 
@@ -311,7 +379,7 @@ export default function DocsPage() {
             },
             {
               q: 'How do I verify the contract code?',
-              a: 'Click "Verify On-Chain" above to see the verified source code on MonadVision. Compare it with our GitHub to confirm they match.',
+              a: 'Use the verification guide above. Click the source links to view verified code on MonadVision, then check that there are no Ownable, AccessControl, or proxy patterns. Compare with our GitHub repository to confirm the deployed code matches.',
             },
           ].map((faq, index) => (
             <motion.div

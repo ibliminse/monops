@@ -1,17 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createPublicClient, http, formatGwei } from 'viem';
-import { monadMainnet } from '@/lib/chain';
+import { formatGwei } from 'viem';
+import { getPublicClient } from '@/lib/chain';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Activity, Fuel, Zap, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-const client = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+const client = getPublicClient();
 
 export function LiveStats() {
   const [blockNumber, setBlockNumber] = useState<bigint | null>(null);

@@ -114,7 +114,7 @@ export default function BurnPage() {
     if (burnType === 'token' && address && tokens.length === 0 && !loadingTokens) {
       setLoadingTokens(true);
       fetch(`/api/tokens?address=${address}`)
-        .then((res) => res.json())
+        .then((res) => { if (!res.ok) throw new Error('Failed to fetch tokens'); return res.json(); })
         .then((data) => {
           if (data.tokens) {
             setTokens(data.tokens);

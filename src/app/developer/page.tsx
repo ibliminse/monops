@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useChainId, useBalance } from 'wagmi';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { createPublicClient, http } from 'viem';
+import { getPublicClient } from '@/lib/chain/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { db } from '@/lib/db';
-import { monadMainnet, MONAD_CHAIN_ID } from '@/lib/chain';
+import { monadMainnet, MONAD_CHAIN_ID, DEFAULT_SCAN_BLOCK_RANGE } from '@/lib/chain';
 import { getCurrentPlan, getPlanLimits, type PlanType } from '@/lib/db/plan';
 import { formatMon, truncateAddress } from '@/lib/utils';
 import {
@@ -30,10 +30,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const client = createPublicClient({
-  chain: monadMainnet,
-  transport: http(),
-});
+const client = getPublicClient();
 
 export default function DeveloperPage() {
   const { address, isConnected } = useAccount();
@@ -96,6 +93,7 @@ export default function DeveloperPage() {
     { key: 'NEXT_PUBLIC_MONAD_RPC_URL', value: process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'Not set' },
     { key: 'NEXT_PUBLIC_MONAD_WS_URL', value: process.env.NEXT_PUBLIC_MONAD_WS_URL || 'Not set' },
     { key: 'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID', value: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ? '****' : 'Not set' },
+    { key: 'NEXT_PUBLIC_SCAN_BLOCK_RANGE', value: `${DEFAULT_SCAN_BLOCK_RANGE.toLocaleString()} blocks` },
   ];
 
   return (

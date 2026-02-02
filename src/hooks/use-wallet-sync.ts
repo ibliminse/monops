@@ -11,6 +11,8 @@ export interface SyncStatus {
   progress: string;
   lastSyncAt: number | null;
   error: string | null;
+  warning: string | null;
+  dataSource: string | null;
 }
 
 export function useWalletSync() {
@@ -21,6 +23,8 @@ export function useWalletSync() {
     progress: '',
     lastSyncAt: null,
     error: null,
+    warning: null,
+    dataSource: null,
   });
 
   const syncWallet = useCallback(async (walletAddress: Address) => {
@@ -75,6 +79,14 @@ export function useWalletSync() {
         throw new Error(data.error || 'API failed');
       }
 
+      // Build warning if data may be incomplete
+      let warning: string | null = null;
+      if (data.incomplete) {
+        warning = 'NFT data may be incomplete — some transfer history could not be fetched.';
+      } else if (data.usedFallback) {
+        warning = 'Primary API was unavailable. Data loaded from fallback source and may be less complete.';
+      }
+
       const now = Date.now();
       setStatus({
         isLoading: false,
@@ -82,6 +94,8 @@ export function useWalletSync() {
         progress: 'Sync complete!',
         lastSyncAt: now,
         error: null,
+        warning,
+        dataSource: data.source || null,
       });
 
       // Store last sync time
@@ -98,6 +112,8 @@ export function useWalletSync() {
         isLoading: false,
         isSyncingNFTs: false,
         error: error instanceof Error ? error.message : 'Sync failed',
+        warning: null,
+        dataSource: null,
       }));
     }
   }, []);

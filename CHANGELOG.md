@@ -1,0 +1,168 @@
+# MonOps Changelog
+
+All notable changes and work sessions are logged here automatically.
+
+---
+
+## 2026-02-01
+
+- [21:50] Edited `src/app/api/nfts/route.ts` — add response.ok check on Etherscan fetch, validate parseInt on blockNumber, gate console.log/warn behind NODE_ENV
+- [21:50] Edited `src/app/api/tokens/route.ts` — add response.ok check on Etherscan fetch, validate parseInt on tokenDecimal (fallback 18), gate console.log/warn behind NODE_ENV
+- [21:50] Edited `src/app/api/snapshot/route.ts` — gate all console.log behind NODE_ENV
+- [21:50] Edited `src/components/error-boundary.tsx` — replace auto-delete with "Try Again" (reload only) and "Clear Data & Reload" (with confirmation dialog)
+- [21:30] Edited `src/app/api/nfts/route.ts` — add maxPages=10 cap on Etherscan pagination, use URL constructor for Etherscan calls, import MORALIS_API_BASE
+- [21:30] Edited `src/app/api/tokens/route.ts` — use URL constructor for Etherscan calls, import MORALIS_API_BASE
+- [21:30] Edited `src/lib/scanner/monadscan-api.ts` — add maxPages=10 cap, use URL constructor for Etherscan calls
+- [21:30] Edited `src/lib/chain/monad.ts` — add `MORALIS_API_BASE` export
+- [21:30] Edited `src/app/burn/page.tsx` — add res.ok check on /api/tokens fetch
+- [21:30] Edited `src/app/transfer/page.tsx` — add res.ok check on /api/tokens fetch
+- [21:30] Edited `src/app/lock/page.tsx` — add res.ok check on /api/tokens fetch
+- [21:30] Edited `src/app/streams/create/page.tsx` — add res.ok check on /api/tokens fetch
+- [21:30] Deleted `src/lib/adapters/marketplace.ts` — unused stub marketplace adapter with 6 TODOs, never imported
+- [21:30] Deleted `src/lib/adapters/index.ts` — barrel export for removed marketplace adapter
+- [21:30] Edited `CLAUDE.md` — add MORALIS_API_BASE to Key Constants
+- [21:15] Edited `src/lib/scanner/monadscan-api.ts` — import `ETHERSCAN_API_BASE` from monad.ts, remove local `API_BASE` const
+- [21:15] Edited `src/lib/chain/monad.ts` — add `ETHERSCAN_API_BASE` export for centralized Etherscan V2 URL
+- [21:15] Edited `src/app/api/nfts/route.ts` — add `isValidAddress` input validation, import `ETHERSCAN_API_BASE` from monad.ts
+- [21:15] Edited `src/app/api/tokens/route.ts` — add `isValidAddress` input validation, import `ETHERSCAN_API_BASE`, add `incomplete` flag for pagination truncation
+- [21:15] Edited `src/app/api/snapshot/route.ts` — add `isValidAddress` input validation for collection address
+- [21:15] Edited `src/app/api/verify-donation/route.ts` — add txHash regex validation and `isValidAddress` wallet validation
+- [21:15] Edited `CLAUDE.md` — fix stale inventory warning gotcha (warnings are now surfaced in UI), add Etherscan API base to Key Constants
+- [20:30] Edited `CLAUDE.md` — rewrite with /init format; add viem client pattern, barrel import gotcha, API route pattern, batch engine pattern, page layout pattern, rate limit table, cookie consent docs
+- [20:15] Created `src/lib/contracts.ts` — centralized contract addresses (TokenStream, TokenLock) as single source of truth
+- [20:15] Edited `src/lib/chain/monad.ts` — add `MONAD_CHAIN_ID_HEX` export for API routes using hex chain ID
+- [20:15] Edited `src/app/streams/page.tsx` — import `TOKEN_STREAM_ADDRESS` from contracts.ts, remove local const
+- [20:15] Edited `src/app/streams/create/page.tsx` — import `TOKEN_STREAM_ADDRESS` from contracts.ts, remove local const
+- [20:15] Edited `src/app/streams/[id]/page.tsx` — import `TOKEN_STREAM_ADDRESS` from contracts.ts, remove local const
+- [20:15] Edited `src/app/lock/page.tsx` — import `TOKEN_LOCK_ADDRESS` from contracts.ts, remove local const
+- [20:15] Edited `src/app/api/nfts/route.ts` — import `MONAD_CHAIN_ID_HEX` from chain config, remove local hex const
+- [20:15] Edited `src/app/api/tokens/route.ts` — import `MONAD_CHAIN_ID_HEX` from chain config, remove local hex const
+- [20:15] Edited `src/lib/scanner/monadscan-api.ts` — import `MONAD_CHAIN_ID` from chain config, remove local const
+- [20:15] Edited `src/app/api/verify-donation/route.ts` — import `DONATION_WALLET` from plan.ts, remove hardcoded address
+- [20:15] Edited `src/app/docs/page.tsx` — import contract addresses from contracts.ts, add "How to Verify: No Admin Keys" card with checklist and explorer links, update FAQ
+- [20:15] Edited `src/features/snapshots/snapshot-engine.ts` — remove unused `buildHolderSnapshot()`, `getMintEvents()`, and ~200 lines of dead code; keep used types and `exportSnapshotCSV`
+- [20:15] Edited `CLAUDE.md` — update deployed contracts table (centralized), remove stale gotchas (duplicate constants, unused snapshot engine)
+- [19:45] Edited `src/app/api/nfts/route.ts` — add rate limiting (10 req/60s) with 429 response
+- [19:45] Edited `src/app/api/tokens/route.ts` — add rate limiting (10 req/60s) with 429 response
+- [19:45] Edited `src/app/api/verify-donation/route.ts` — add rate limiting (5 req/60s) with 429 response
+- [19:45] Edited `src/lib/batch-engine/disperse.ts` — add missing `monadMainnet` import from `@/lib/chain`
+- [19:45] Edited `src/lib/batch-engine/nft-transfer.ts` — add missing `monadMainnet` import from `@/lib/chain`
+- [19:33] Created `src/lib/rate-limit.ts` — sliding-window IP-based rate limiter with probabilistic cleanup for serverless
+- [19:33] Edited `src/app/api/snapshot/route.ts` — replace local client with `createServerClient()`, add rate limiting (3 req/60s)
+- [19:33] Edited `src/app/api/verify-donation/route.ts` — delete inline `defineChain` block, use `createServerClient()` from centralized client
+- [19:33] Edited `src/lib/chain/monad.ts` — add `MONAD_RPC_PRIMARY` and `MONAD_RPC_FALLBACKS` exports; make `DEFAULT_SCAN_BLOCK_RANGE` configurable via `NEXT_PUBLIC_SCAN_BLOCK_RANGE` env var; remove unused `RPC_RATE_LIMIT_RPS` and `RPC_BATCH_LIMIT`
+- [19:33] Edited `src/lib/chain/client.ts` — full rewrite with `fallback()` transport, `getPublicClient()` singleton, `createServerClient()` for API routes
+- [19:33] Edited `src/lib/chain/config.ts` — update wagmi transport to use shared RPC constants with fallback
+- [19:33] Edited `src/features/inventory/inventory-scanner.ts` — replace local `createPublicClient` with `getPublicClient()`
+- [19:33] Edited `src/features/snapshots/snapshot-engine.ts` — replace local `createPublicClient` with `getPublicClient()`
+- [19:33] Edited `src/features/inventory/collection-store.ts` — replace local `createPublicClient` with `getPublicClient()`
+- [19:33] Edited `src/components/live-stats.tsx` — replace local `createPublicClient` with `getPublicClient()`
+- [19:33] Edited `src/lib/batch-engine/disperse.ts` — replace local `createPublicClient` with `getPublicClient()`
+- [19:33] Edited `src/lib/batch-engine/nft-transfer.ts` — replace local `createPublicClient` with `getPublicClient()`
+- [19:33] Edited `src/app/developer/page.tsx` — use `getPublicClient()`, add `NEXT_PUBLIC_SCAN_BLOCK_RANGE` to env vars table
+- [18:45] Edited `CHANGELOG.md` — backfill Jan 12-13 entries with proper timestamps, file paths, and Created/Edited/Deleted labels from git history
+- [17:45] Edited `next.config.js` — add security headers: CSP, X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- [17:45] Created `src/components/consent-banner.tsx` — cookie consent banner with Accept/Decline, stores preference in localStorage, gates GA loading
+- [17:45] Edited `src/components/google-analytics.tsx` — gate GA script loading on localStorage consent; listen for consent-updated events
+- [17:45] Edited `src/app/layout.tsx` — add ConsentBanner component to root layout
+- [17:45] Created `src/app/privacy/page.tsx` — Privacy Policy page covering data collection, local storage, third parties, rights
+- [17:45] Created `src/app/tos/page.tsx` — Terms of Service page covering non-custodial design, smart contract risks, no warranties, donations
+- [17:45] Edited `src/components/sidebar.tsx` — add Privacy and Terms links to sidebar bottom navigation
+- [17:25] Edited `src/app/api/nfts/route.ts` — return `source`, `usedFallback`, and `incomplete` metadata; track Etherscan pagination interruptions
+- [17:25] Edited `src/hooks/use-wallet-sync.ts` — add `warning` and `dataSource` fields to SyncStatus; propagate API completeness info to UI
+- [17:25] Edited `src/app/inventory/page.tsx` — add amber "Incomplete Data" warning banner when sync reports partial or fallback data
+- [13:20] Edited `src/app/api/snapshot/route.ts` — track failed token queries, return `incomplete` flag and `failedTokens` count
+- [13:20] Edited `src/app/snapshots/page.tsx` — add amber warning banner when snapshot data is incomplete
+- [13:20] Edited `src/features/inventory/inventory-scanner.ts` — track and report failed block ranges during sync
+- [13:20] Edited `src/features/snapshots/snapshot-engine.ts` — track failed block ranges in progress callbacks
+- [12:17] Edited `src/app/docs/page.tsx` — fix TokenStream address from 0x0aEBF71... to 0x45060bA..., remove false "cancellable by sender" claim, rewrite FAQ to reflect immutable streams
+- [12:00] Created `CHANGELOG.md` — automatic session and change tracking
+
+## 2026-01-13
+
+- [01:55] Created `src/components/donation-prompt.tsx` — periodic donation prompt popup component
+- [01:55] Created `src/hooks/use-donation-prompt.ts` — donation prompt timing and display logic
+- [01:55] Edited `src/app/layout.tsx` — add DonationPrompt component to root layout
+- [01:48] Created `src/app/api/verify-donation/route.ts` — on-chain donation verification API endpoint
+- [01:48] Created `src/hooks/use-supporter-status.ts` — supporter status hook with localStorage caching
+- [01:48] Edited `src/app/donate/page.tsx` — add automatic donation verification flow
+- [01:48] Edited `src/hooks/index.ts` — export new supporter status and donation prompt hooks
+- [01:31] Edited `src/app/page.tsx` — compact header, stats bar, cleaner mobile layout
+- [01:31] Edited `src/components/header.tsx` — responsive header improvements
+- [01:31] Edited `src/components/live-stats.tsx` — compact mobile layout for live stats
+- [01:25] Edited `README.md` — update with current features and donation system
+- [01:18] Edited `src/app/donate/page.tsx` — add multi-chain donation wallets (Monad, Bitcoin, Solana)
+- [01:18] Edited `src/lib/db/plan.ts` — add multi-chain wallet addresses
+- [01:12] Created `src/app/donate/page.tsx` — donation page with wallet-based whitelist system
+- [01:12] Edited `src/app/developer/page.tsx` — simplify developer page
+- [01:12] Edited `src/app/page.tsx` — add donate link to dashboard
+- [01:12] Edited `src/lib/db/plan.ts` — add donation-based plan limits (free vs supporter)
+- [01:12] Edited `src/components/sidebar.tsx` — add Donate link
+- [01:04] Created `src/app/docs/page.tsx` — docs page for transparency, security principles, FAQ
+- [01:04] Edited `src/components/sidebar.tsx` — add Docs link
+- [00:57] Edited `src/app/burn/page.tsx` — add Framer Motion animations
+- [00:57] Edited `src/app/inventory/page.tsx` — add Framer Motion animations
+- [00:57] Edited `src/app/lock/page.tsx` — add Framer Motion animations
+- [00:57] Edited `src/app/streams/page.tsx` — add Framer Motion animations
+- [00:57] Edited `src/app/transfer/page.tsx` — add Framer Motion animations
+- [00:57] Created `src/components/ui/page-wrapper.tsx` — shared animated page layout components
+- [00:43] Edited `src/app/globals.css` — add glass-card and animation styles
+- [00:43] Edited `src/app/page.tsx` — 10x UI upgrade with Framer Motion animations
+- [00:43] Edited `src/components/sidebar.tsx` — animated sidebar with hover effects
+- [00:43] Created `src/components/ui/motion.tsx` — shared motion animation variants
+- [00:38] Edited `src/app/layout.tsx` — responsive layout adjustments
+- [00:38] Edited `src/app/lock/page.tsx` — mobile-friendly layout
+- [00:38] Edited `src/app/page.tsx` — responsive dashboard layout
+- [00:38] Edited `src/app/streams/page.tsx` — responsive streams layout
+- [00:38] Edited `src/components/sidebar.tsx` — mobile hamburger menu, responsive sidebar
+- [00:21] Created `test/TokenLock.test.cjs` — comprehensive TokenLock contract test suite
+- [00:21] Created `test/TokenStream.test.cjs` — comprehensive TokenStream contract test suite
+- [00:21] Created `contracts/test/MockERC20.sol` — mock ERC-20 for contract testing
+- [00:21] Created `hardhat.config.cjs` — Hardhat configuration for contract tests
+- [00:09] Created `contracts/TokenStream.sol` — token streaming/vesting smart contract
+- [00:09] Created `contracts/TokenStream_Flat.sol` — flattened TokenStream for verification
+- [00:09] Created `contracts/TokenLock_Flat.sol` — flattened TokenLock for verification
+- [00:09] Created `src/app/streams/page.tsx` — streams list page
+- [00:09] Created `src/app/streams/create/page.tsx` — stream creation page (single + batch)
+- [00:09] Created `src/app/streams/[id]/page.tsx` — individual stream detail/withdraw page
+- [00:09] Edited `src/components/sidebar.tsx` — add Streams link
+
+## 2026-01-12
+
+- [23:18] Edited `src/app/burn/page.tsx` — try native `burn()` function before fallback to dead-address transfer
+- [23:16] Edited `src/app/burn/page.tsx` — add auto-refresh after burning NFTs or tokens
+- [23:06] Created `src/app/burn/page.tsx` — NFT burn page with confirmation dialog
+- [23:06] Created `src/app/lock/page.tsx` — token lock page with vesting/cliff options
+- [23:06] Created `contracts/TokenLock.sol` — token time-lock smart contract
+- [23:06] Created `src/components/ui/alert-dialog.tsx` — alert dialog component for confirmations
+- [23:06] Deleted `src/app/mint-monitor/page.tsx` — removed mint monitor feature
+- [23:06] Deleted `src/features/mint-monitor/monitor.ts` — removed mint monitor logic
+- [23:06] Deleted `src/features/mint-monitor/index.ts` — removed mint monitor exports
+- [23:06] Edited `src/components/sidebar.tsx` — replace Mint Monitor with Burn and Lock links
+- [22:56] Created `src/app/api/tokens/route.ts` — ERC-20 token balance API endpoint
+- [22:56] Edited `src/app/transfer/page.tsx` — fix token loading with new API endpoint
+- [22:32] Edited `src/app/disperse/page.tsx` — gutted to redirect (consolidated into Transfer)
+- [22:32] Edited `src/app/page.tsx` — update dashboard links for consolidated transfer
+- [22:32] Edited `src/components/command-palette.tsx` — remove separate disperse command
+- [22:32] Edited `src/components/sidebar.tsx` — remove Disperse link
+- [22:30] Edited `src/app/transfer/page.tsx` — full redesign with Lite/Pro modes and multi-asset support
+- [22:21] Edited `src/app/snapshots/page.tsx` — improve loading state and UI
+- [22:04] Edited `src/lib/chain/monad.ts` — fix block explorer URLs to monadvision.com
+- [22:04] Edited `src/app/disperse/page.tsx` — fix explorer link
+- [22:04] Edited `src/app/inventory/page.tsx` — fix explorer link
+- [22:04] Edited `src/app/snapshots/page.tsx` — fix explorer link
+- [22:04] Edited `src/app/transfer/page.tsx` — fix explorer link
+- [21:59] Created `src/app/api/snapshot/route.ts` — snapshot API with direct `ownerOf` queries
+- [21:59] Edited `src/app/snapshots/page.tsx` — use new snapshot API instead of log replay
+- [20:37] Edited `src/components/live-stats.tsx` — add tooltips and enhanced stats display
+- [20:37] Created `src/components/ui/tooltip.tsx` — tooltip UI component
+- [20:12] Edited `src/app/inventory/page.tsx` — fix NFT display queries
+- [20:12] Edited `src/app/page.tsx` — fix dashboard NFT count queries
+- [20:10] Edited `src/app/api/nfts/route.ts` — implement Moralis NFT API with Etherscan fallback
+- [20:10] Edited `src/app/inventory/page.tsx` — single wallet mode display
+- [20:10] Edited `src/hooks/use-wallet-sync.ts` — simplify to API-based sync
+- [20:10] Edited `src/lib/db/index.ts` — simplify DB schema
+- [20:10] Deleted `src/app/wallets/page.tsx` — removed multi-wallet management
+- [20:10] Deleted `src/features/wallet-library/wallet-store.ts` — removed wallet library
+- [20:10] Deleted `src/lib/scanner/nft-scanner.ts` — removed client-side NFT scanner
+- [12:06] Created initial project — Next.js app with dashboard, inventory, transfer, snapshots, disperse, mint monitor, developer page, command palette, sidebar, header, providers, wagmi config, Dexie DB, batch engine

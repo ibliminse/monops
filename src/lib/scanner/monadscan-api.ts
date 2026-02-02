@@ -4,8 +4,7 @@
  * Much faster and more reliable than scanning logs
  */
 
-const API_BASE = 'https://api.etherscan.io/v2/api';
-const MONAD_CHAIN_ID = 143;
+import { MONAD_CHAIN_ID, ETHERSCAN_API_BASE } from '@/lib/chain/monad';
 
 export interface MonadscanNFT {
   blockNumber: string;
@@ -42,17 +41,26 @@ export async function fetchNFTTransfers(
   const allTransfers: MonadscanNFT[] = [];
   let page = 1;
   const pageSize = 100;
+  const maxPages = 10;
   let hasMore = true;
 
   onProgress?.('Fetching NFT data from Monadscan...');
 
-  while (hasMore) {
-    const url = `${API_BASE}?chainid=${MONAD_CHAIN_ID}&module=account&action=tokennfttx&address=${address}&page=${page}&offset=${pageSize}&sort=desc&apikey=${apiKey}`;
+  while (hasMore && page <= maxPages) {
+    const url = new URL(ETHERSCAN_API_BASE);
+    url.searchParams.set('chainid', String(MONAD_CHAIN_ID));
+    url.searchParams.set('module', 'account');
+    url.searchParams.set('action', 'tokennfttx');
+    url.searchParams.set('address', address);
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('offset', String(pageSize));
+    url.searchParams.set('sort', 'desc');
+    url.searchParams.set('apikey', apiKey);
 
     console.log(`[Monadscan] Fetching page ${page}...`);
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url.toString());
       const data = await response.json();
 
       if (data.status === '1' && Array.isArray(data.result)) {
@@ -60,6 +68,10 @@ export async function fetchNFTTransfers(
         onProgress?.(`Fetched ${allTransfers.length} NFT transfers...`);
 
         if (data.result.length < pageSize) {
+          hasMore = false;
+        } else if (page >= maxPages) {
+          onProgress?.(`Pagination capped at ${maxPages} pages — data may be incomplete`);
+          console.warn(`[Monadscan] Pagination capped at ${maxPages} pages`);
           hasMore = false;
         } else {
           page++;

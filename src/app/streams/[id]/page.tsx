@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { NetworkGuard } from '@/components/network-guard';
 import { getPublicClient } from '@/lib/chain/client';
+import { TOKEN_STREAM_ADDRESS } from '@/lib/contracts';
 import {
   Waves,
   ArrowLeft,
@@ -55,9 +56,6 @@ interface StreamDetail {
   status: 'scheduled' | 'streaming' | 'in_cliff' | 'completed';
 }
 
-// TODO: Deploy this contract and update the address
-const STREAM_CONTRACT_ADDRESS: Address = '0x45060bA620768a20c792E60fbc6161344cA22a12'; // Will be set after deployment
-
 export default function StreamDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -74,7 +72,7 @@ export default function StreamDetailPage() {
   const [currentWithdrawable, setCurrentWithdrawable] = useState<bigint>(0n);
 
   // Check if contract is deployed
-  const isContractDeployed = STREAM_CONTRACT_ADDRESS !== null;
+  const isContractDeployed = TOKEN_STREAM_ADDRESS !== null;
 
   // Copy to clipboard
   const copyAddress = (addr: string, type: string) => {
@@ -85,7 +83,7 @@ export default function StreamDetailPage() {
 
   // Load stream details
   const loadStream = useCallback(async () => {
-    if (!streamId || !STREAM_CONTRACT_ADDRESS) return;
+    if (!streamId || !TOKEN_STREAM_ADDRESS) return;
 
     setLoading(true);
     setError(null);
@@ -95,19 +93,19 @@ export default function StreamDetailPage() {
 
       const [streamData, withdrawable, rate] = await Promise.all([
         client.readContract({
-          address: STREAM_CONTRACT_ADDRESS,
+          address: TOKEN_STREAM_ADDRESS,
           abi: STREAM_ABI,
           functionName: 'getStream',
           args: [BigInt(streamId)],
         }),
         client.readContract({
-          address: STREAM_CONTRACT_ADDRESS,
+          address: TOKEN_STREAM_ADDRESS,
           abi: STREAM_ABI,
           functionName: 'getWithdrawableAmount',
           args: [BigInt(streamId)],
         }),
         client.readContract({
-          address: STREAM_CONTRACT_ADDRESS,
+          address: TOKEN_STREAM_ADDRESS,
           abi: STREAM_ABI,
           functionName: 'getStreamRate',
           args: [BigInt(streamId)],
@@ -185,13 +183,13 @@ export default function StreamDetailPage() {
 
   // Update withdrawable amount in real-time
   useEffect(() => {
-    if (!stream || stream.status !== 'streaming' || !STREAM_CONTRACT_ADDRESS) return;
+    if (!stream || stream.status !== 'streaming' || !TOKEN_STREAM_ADDRESS) return;
 
     const interval = setInterval(async () => {
       try {
         const client = getPublicClient();
         const withdrawable = await client.readContract({
-          address: STREAM_CONTRACT_ADDRESS,
+          address: TOKEN_STREAM_ADDRESS,
           abi: STREAM_ABI,
           functionName: 'getWithdrawableAmount',
           args: [stream.id],
@@ -207,12 +205,12 @@ export default function StreamDetailPage() {
 
   // Withdraw tokens
   const handleWithdraw = useCallback(async () => {
-    if (!walletClient || !stream || !STREAM_CONTRACT_ADDRESS) return;
+    if (!walletClient || !stream || !TOKEN_STREAM_ADDRESS) return;
 
     setWithdrawing(true);
     try {
       const hash = await walletClient.writeContract({
-        address: STREAM_CONTRACT_ADDRESS,
+        address: TOKEN_STREAM_ADDRESS,
         abi: STREAM_ABI,
         functionName: 'withdraw',
         args: [stream.id],

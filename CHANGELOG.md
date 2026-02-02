@@ -4,6 +4,13 @@ All notable changes and work sessions are logged here automatically.
 
 ---
 
+## 2026-02-02
+
+- [00:15] Edited `CLAUDE.md` — comprehensive rewrite for IDE migration: added env vars section, security audit checklist, API route pattern table, IDE-agnostic header
+- [00:15] Edited `.env.local.example` — added 4 missing env vars (MORALIS_API_KEY, NEXT_PUBLIC_MONADSCAN_API_KEY, NEXT_PUBLIC_GA_MEASUREMENT_ID, NEXT_PUBLIC_SCAN_BLOCK_RANGE) with documentation
+- [00:15] Created `HANDOFF.md` — full IDE migration handoff doc with architecture, critical patterns, deployment info, key files
+- [00:15] Created `contracts/TokenStream_Flat.sol` — flattened TokenStream contract for verification
+
 ## 2026-02-01
 
 - [21:50] Edited `src/app/api/nfts/route.ts` — add response.ok check on Etherscan fetch, validate parseInt on blockNumber, gate console.log/warn behind NODE_ENV

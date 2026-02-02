@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding assistants (Claude Code, Cursor, Google Antigravity, etc.) when working with code in this repository.
 
 MonOps is a non-custodial batch operations dashboard for the Monad blockchain (Chain ID 143). It runs entirely client-side — browser talks to RPC, user signs every transaction in their wallet, no backend database, no server-side auth. Deployed on Vercel at monops-six.vercel.app.
 
@@ -11,6 +11,7 @@ MonOps is a non-custodial batch operations dashboard for the Monad blockchain (C
 - **Local DB**: Dexie (IndexedDB) — all user data lives in the browser
 - **Contracts**: Solidity 0.8.20 (Hardhat, OpenZeppelin 5)
 - **CSV**: PapaParse for import/export
+- **Animations**: Framer Motion
 
 ## Commands
 
@@ -42,8 +43,13 @@ src/
     disperse/           # Multi-send MON or ERC-20
     donate/             # Donation page + verification
     docs/               # Security docs + FAQ + contract verification guide
+    privacy/            # Privacy Policy
+    tos/                # Terms of Service
     developer/          # Debug page (DB stats, env vars, chain info)
   components/           # Shared UI (sidebar, header, providers, donation prompt)
+    consent-banner.tsx  # Cookie consent gates Google Analytics
+    error-boundary.tsx  # Error boundary with data-safe recovery
+    ui/                 # shadcn/ui + page-wrapper, motion variants
   features/
     inventory/          # Inventory scanner (log replay from RPC)
     snapshots/          # Snapshot types + CSV export helper
@@ -51,13 +57,37 @@ src/
   hooks/                # use-network-guard, use-supporter-status, use-donation-prompt
   lib/
     chain/              # Monad config, ABIs, wagmi config, viem client
+      client.ts         # getPublicClient() + createServerClient() — CRITICAL
+      monad.ts          # Chain definition + all centralized constants
+      config.ts         # wagmi config (browser-only)
+      index.ts          # Barrel re-export (DO NOT use in API routes)
     contracts.ts        # Centralized contract addresses (single source of truth)
     db/                 # Dexie schema + plan limits (free vs supporter)
     batch-engine/       # Sequential batch execution with per-item status
     rate-limit.ts       # IP-based sliding-window rate limiter for API routes
     scanner/            # Token scanner, Monadscan API adapter
+    utils.ts            # isValidAddress, formatAddress, cn
 contracts/              # Solidity: TokenStream.sol, TokenLock.sol, test/MockERC20.sol
 test/                   # Hardhat test suites for both contracts
+```
+
+## Environment Variables
+
+```env
+# Required
+NEXT_PUBLIC_MONAD_RPC_URL=https://rpc.monad.xyz      # Monad RPC endpoint
+NEXT_PUBLIC_MONAD_WS_URL=wss://rpc.monad.xyz          # Monad WebSocket
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=abc123            # RainbowKit wallet connect
+
+# API keys (server-side, optional — enable richer data)
+MORALIS_API_KEY=                    # Moralis API key (primary NFT/token data source)
+NEXT_PUBLIC_MONADSCAN_API_KEY=      # Etherscan V2 API key (fallback data source)
+
+# Analytics (optional)
+NEXT_PUBLIC_GA_MEASUREMENT_ID=      # Google Analytics measurement ID
+
+# Tuning (optional)
+NEXT_PUBLIC_SCAN_BLOCK_RANGE=500000 # Block range for log scanning (default: 500k)
 ```
 
 ## Viem Client Pattern (CRITICAL)
@@ -77,7 +107,7 @@ Both use `fallback()` transport with `rank: true` for automatic RPC failover.
 ```typescript
 // ✅ In API routes:
 import { createServerClient } from '@/lib/chain/client';
-import { MONAD_CHAIN_ID_HEX } from '@/lib/chain/monad';
+import { MONAD_CHAIN_ID_HEX, ETHERSCAN_API_BASE } from '@/lib/chain/monad';
 
 // ❌ Causes runtime error in API routes:
 import { createServerClient } from '@/lib/chain';
@@ -89,9 +119,16 @@ Client-side code can use either the barrel or direct imports.
 
 All API routes follow this structure:
 
-1. **Rate limiting** at the top of the handler using `src/lib/rate-limit.ts`:
+1. **Rate limiting** at the top of the handler using `src/lib/rate-limit.ts`
+2. **Input validation** — `isValidAddress()` on addresses, regex on txHash
+3. **Moralis first, Etherscan fallback** for NFT and token routes
+4. **`response.ok` check** on all external fetch calls
+5. **`incomplete` flag** returned when data may be partial (pagination interrupted, failed queries)
+6. **Dev-only logging** — `console.log`/`console.warn` gated behind `NODE_ENV === 'development'`; only `console.error` runs in production
+7. **Etherscan pagination capped** at `maxPages = 10` to prevent runaway API calls
+
 ```typescript
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+const isDev = process.env.NODE_ENV === 'development';
 
 export async function GET(request: NextRequest) {
   const { limited, retryAfterMs } = rateLimit('route-key', getClientIp(request), {
@@ -103,19 +140,16 @@ export async function GET(request: NextRequest) {
       { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
     );
   }
-  // ... handler logic
+  // ... validate inputs, fetch data, return response
 }
 ```
 
-2. **Moralis first, Etherscan fallback** for NFT and token routes.
-3. **`incomplete` flag** returned when data may be partial (pagination interrupted, failed queries).
-
-| Route | Method | Rate Limit |
-|-------|--------|-----------|
-| `/api/nfts` | GET | 10/60s |
-| `/api/tokens` | GET | 10/60s |
-| `/api/snapshot` | GET | 3/60s |
-| `/api/verify-donation` | POST | 5/60s |
+| Route | Method | Rate Limit | Input Validation |
+|-------|--------|-----------|------------------|
+| `/api/nfts` | GET | 10/60s | `isValidAddress(address)` |
+| `/api/tokens` | GET | 10/60s | `isValidAddress(address)` |
+| `/api/snapshot` | GET | 3/60s | `isValidAddress(collection)` |
+| `/api/verify-donation` | POST | 5/60s | txHash regex + `isValidAddress(wallet)` |
 
 ## Batch Engine Pattern
 
@@ -128,7 +162,6 @@ export async function GET(request: NextRequest) {
 ```typescript
 // Preflight
 const result = await preflightNFTTransfers(items, signerAddress);
-// result.valid, result.errors[], result.estimatedGas, result.itemResults[]
 
 // Execute with progress callbacks
 const batchId = await executeNFTTransfers(items, signerAddress, walletClient, {
@@ -158,28 +191,32 @@ Feature pages use shared components from `src/components/ui/page-wrapper.tsx`:
 
 ## Deployed Contracts
 
-| Contract | Address | Status |
+| Contract | Address | Source |
 |----------|---------|--------|
-| TokenStream | `0x45060bA620768a20c792E60fbc6161344cA22a12` | Deployed — centralized in `src/lib/contracts.ts` |
-| TokenLock | `0xC4Ca03a135B6dE0Dba430e28de5fe9C10cA99CB0` | Deployed — centralized in `src/lib/contracts.ts` |
+| TokenStream | `0x45060bA620768a20c792E60fbc6161344cA22a12` | `src/lib/contracts.ts` |
+| TokenLock | `0xC4Ca03a135B6dE0Dba430e28de5fe9C10cA99CB0` | `src/lib/contracts.ts` |
 
-Both contracts: no admin keys, no pause, no upgrade proxy, ReentrancyGuard, SafeERC20. Streams are **immutable** (no cancellation). Not formally audited (disclosed in docs).
+Both contracts: no admin keys, no pause, no upgrade proxy, ReentrancyGuard, SafeERC20. Streams are **immutable** (no cancellation). Not formally audited (disclosed in docs page).
 
-## Key Constants
+Verified source on MonadVision: `https://monadvision.com/address/{address}#code`
+
+## Key Constants (Single Source of Truth)
 
 | What | Where | Value |
 |------|-------|-------|
 | Chain ID (decimal) | `src/lib/chain/monad.ts` | 143 |
 | Chain ID (hex) | `src/lib/chain/monad.ts` | `0x8f` |
 | Default RPC | `src/lib/chain/monad.ts` | `https://rpc.monad.xyz` |
-| Block scan range | `src/lib/chain/monad.ts` | 500,000 (env-configurable via `NEXT_PUBLIC_SCAN_BLOCK_RANGE`) |
-| Contract addresses | `src/lib/contracts.ts` | See Deployed Contracts table |
+| Block scan range | `src/lib/chain/monad.ts` | 500,000 (env-configurable) |
 | Etherscan API base | `src/lib/chain/monad.ts` | `https://api.etherscan.io/v2/api` |
 | Moralis API base | `src/lib/chain/monad.ts` | `https://deep-index.moralis.io/api/v2.2` |
+| Contract addresses | `src/lib/contracts.ts` | See Deployed Contracts table |
 | Donation wallet | `src/lib/db/plan.ts` | `0x418e804EBe896D68B6e89Bf2401410e5DE6c701a` |
 | Min donation | `src/app/api/verify-donation/route.ts` | 1 MON |
 | Free batch limit | `src/lib/db/plan.ts` | 10 items |
 | Supporter batch limit | `src/lib/db/plan.ts` | 1,000 items |
+| Gas fallback (NFT) | `src/lib/batch-engine/nft-transfer.ts` | 100,000 |
+| Gas fallback (ERC-20) | `src/lib/batch-engine/disperse.ts` | 65,000 |
 
 ## Design Invariants
 
@@ -197,7 +234,7 @@ These must hold unless deliberately overturned:
 
 ## Known Gotchas
 
-**Silent failure in log scanning**: `inventory-scanner.ts` catches RPC errors per block range and continues. Failed ranges are tracked in `failedRanges` and surfaced via progress callbacks. The snapshot API (`/api/snapshot`) tracks `failedTokens` and returns `incomplete: true` when queries fail. Both the snapshots page and inventory page show amber warning banners when data is incomplete or from a fallback source.
+**Barrel import kills API routes**: `src/lib/chain/index.ts` re-exports wagmi config which imports RainbowKit (browser-only). Any API route importing from `@/lib/chain` will crash at runtime with `TypeError: i is not a function`. Always use direct file imports in API routes.
 
 **500k block window**: `DEFAULT_SCAN_BLOCK_RANGE` is 500,000 blocks (configurable via env var). As Monad ages, older collections will have incomplete data from log scanning. The API snapshot route uses `ownerOf` (current state) so it's unaffected.
 
@@ -206,6 +243,34 @@ These must hold unless deliberately overturned:
 **Supporter status in localStorage**: Verified donations are cached in `localStorage` under `monops_verified_supporters`. No re-verification on subsequent sessions. Clearing localStorage resets status (user must re-verify).
 
 **Cookie consent gates analytics**: Google Analytics only loads after the user accepts the consent banner (`src/components/consent-banner.tsx`). Consent stored in localStorage under `monops_analytics_consent`. The GA component listens for a custom `monops-consent-updated` event to react without page reload.
+
+**Error boundary is data-safe**: The error boundary shows "Try Again" (reload only, no data loss) and "Clear Data & Reload" (requires explicit confirmation before deleting IndexedDB). It never auto-deletes user data.
+
+## Security Audit Status (Feb 2026)
+
+Completed across 6 hardening batches:
+
+- [x] Centralized viem client (singleton + serverless-safe patterns)
+- [x] Rate limiting on all API routes (IP-based sliding window)
+- [x] Security headers (CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- [x] Cookie consent gating Google Analytics
+- [x] Privacy Policy and Terms of Service pages
+- [x] Centralized all constants (contract addresses, chain IDs, API URLs, donation wallet)
+- [x] Input validation on all API routes (address format, txHash regex)
+- [x] `response.ok` checks on all external fetch calls (Moralis + Etherscan)
+- [x] `response.ok` checks on all client-side API calls
+- [x] Pagination caps (maxPages=10) on all Etherscan loops
+- [x] URL constructor (new URL + searchParams.set) for all external API calls
+- [x] Incomplete data flags on all API routes
+- [x] Dev-only logging (console.log/warn gated, only console.error in prod)
+- [x] parseInt validation with NaN fallbacks
+- [x] Error boundary with confirmation before data deletion
+- [x] Dead code removal (unused snapshot engine functions, marketplace adapter)
+- [x] Contract verification section in docs
+
+Remaining low-priority items:
+- [ ] CSV address validation at parse time (currently only validated at execution)
+- [ ] `parseFloat` validation on amount inputs in burn/lock/streams pages (form validation exists, but no programmatic guard)
 
 ## Changelog
 
@@ -242,3 +307,4 @@ This project maintains a `CHANGELOG.md` at the project root. You MUST update it 
 - Trust external API data as authoritative (always verify against chain)
 - Assume docs are correct without checking the actual code/contracts
 - Import from `@/lib/chain` barrel in API routes (use direct file imports)
+- Use `replace_all` on variable names that appear in import statements (causes double-suffix bugs)
